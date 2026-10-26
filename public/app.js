@@ -32,7 +32,18 @@ function validate(data) {
   });
 }
 function safeWebsite(value) { try { return ["https:","http:"].includes(new URL(value).protocol); } catch { return false; } }
-function save(next) { colleges=next; return true; }
+try {
+  const saved = localStorage.getItem(KEY);
+  if (saved) colleges = validate(JSON.parse(saved));
+} catch {
+  storageReady = false;
+  announce("Saved data could not be read. Export a backup before making changes. Your existing storage has not been overwritten.");
+}
+function save(next) {
+  if (!storageReady) { announce("Storage is unavailable or contains unreadable data. Export your current list before trying another browser."); return false; }
+  try { localStorage.setItem(KEY,JSON.stringify(next)); colleges = next; return true; }
+  catch { announce("Your browser could not save this change. Your list was not changed. Export a backup and check available storage."); return false; }
+}
 function node(tag,cls,text) { const n=document.createElement(tag); if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n; }
 function today() { const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-"); }
 function dateLabel(value) { return new Date(value+"T12:00:00").toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}); }
