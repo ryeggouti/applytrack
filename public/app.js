@@ -115,4 +115,8 @@ $("college-form").addEventListener("submit",e=>{
 });
 $("cancel-delete").addEventListener("click",()=>$("confirm").close());
 $("confirm-delete").addEventListener("click",()=>{if(save(colleges.filter(c=>c.id!==deleteId))){$("confirm").close();render();}});
+$("export").addEventListener("click",()=>{
+  const blob=new Blob([JSON.stringify({format:"ApplyTrack",version:1,colleges},null,2)],{type:"application/json"});
+  const a=node("a");const url=URL.createObjectURL(blob);a.href=url;a.download="applytrack-"+today()+".json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+});
 render();
