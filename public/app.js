@@ -62,7 +62,17 @@ function render() {
     const meta=node("div","meta");
     meta.append(node("span",c.deadline&&c.deadline<today()&&c.status!=="Submitted"?"due":"",c.deadline?(c.deadline<today()&&c.status!=="Submitted"?"Past deadline · ":"Due · ")+dateLabel(c.deadline):"No deadline set"));
     card.append(meta);
-    if(c.notes)card.append(node("div","notes",c.notes));
+    const ready=c.documents.filter(d=>d.done).length,ph=node("div","progress-head");
+    ph.append(node("span","","Document checklist"),node("span","",ready+" of "+c.documents.length+" ready"));card.append(ph);
+    const track=node("div","track"),fill=node("span");fill.style.width=(c.documents.length?ready/c.documents.length*100:0)+"%";track.append(fill);card.append(track);
+    const checks=node("div","documents");
+    c.documents.forEach((d,i)=>{
+      const label=node("label","document"),input=node("input");input.type="checkbox";input.checked=d.done;
+      input.addEventListener("change",()=>{const next=structuredClone(colleges);next.find(x=>x.id===c.id).documents[i].done=input.checked;if(save(next))render();else input.checked=!input.checked;});
+      label.append(input,node("span","",d.name));checks.append(label);
+    });
+    if(!c.documents.length)checks.append(node("span","round","No documents added yet. Edit this college to add its requirements."));
+    card.append(checks);if(c.notes)card.append(node("div","notes",c.notes));
     const bottom=node("div","card-bottom"),site=node("span");
     if(c.website){const a=node("a","","Official website ↗");a.href=c.website;a.target="_blank";a.rel="noopener noreferrer";site.append(a);}
     const actions=node("div","actions");actions.append(button("Edit",()=>edit(c)));
