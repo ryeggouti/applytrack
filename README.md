@@ -4,10 +4,10 @@ A college application planner with device-local checklists.
 
 **[Open the GitHub Pages prototype](https://ryeggouti.github.io/applytrack/)**
 
-The public prototype supports manual college planning, checklists and backups.
-Automatic university research is available through its link to the
-[server-hosted prototype](https://applytrack-ryeggouti.maplebison10.chatgpt.site),
-which currently requires the owner's ChatGPT sign-in.
+The public website supports college planning, checklists, backups and automatic
+university research in the same page. No account or external prototype is needed.
+GitHub Pages serves the interface; a public research API fetches official sources
+in the background. Saved applications stay in this browser.
 
 ## Run locally
 
