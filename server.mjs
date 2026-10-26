@@ -14,7 +14,23 @@ export const server=http.createServer(async(req,res)=>{
       const {searchUniversities}=await import("./lib/universities.mjs");
       return json(res,200,await searchUniversities(query));
     }
-
+    if (url.pathname === "/api/research" && req.method === "POST") {
+      const expected=process.env.PUBLIC_ORIGIN||url.origin;
+      if(req.headers.origin&&req.headers.origin!==expected)return json(res,403,{error:"Use research from ApplyTrack."});
+      const owner=req.socket.remoteAddress||"local";
+      if(active.has(owner))return json(res,429,{error:"Your previous lookup is still running."});
+      active.add(owner);
+      try {
+        let raw="";
+        for await(const chunk of req){raw+=chunk.toString("utf8");if(Buffer.byteLength(raw)>3000)return json(res,413,{error:"Request too large."});}
+        const data=JSON.parse(raw);
+        if(typeof data.url!=="string"||data.url.length>1000||!["domestic","international"].includes(data.applicant)||!["first-year","transfer"].includes(data.level))return json(res,400,{error:"Choose an official URL, applicant type and entry type."});
+        const {academicURL}=await import("./lib/urls.mjs");academicURL(data.url);
+        const {research}=await import("./lib/crawler.mjs");
+        return json(res,200,await research(data));
+      } catch(error) { return json(res,400,{error:error.message||"Lookup failed."}); }
+      finally {active.delete(owner);}
+    }
     if(url.pathname.startsWith("/api/"))return json(res,404,{error:"Endpoint not found."});
     if(!["GET","HEAD"].includes(req.method))return json(res,405,{error:"Method not allowed."});
     const requested=["/","/planner","/planner.html"].includes(url.pathname)?"index.html":decodeURIComponent(url.pathname).replace(/^\/+/,"");
