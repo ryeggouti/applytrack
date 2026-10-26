@@ -89,7 +89,7 @@ function render() {
     card.append(checks);if(c.notes)card.append(node("div","notes",c.notes));
     const bottom=node("div","card-bottom"),site=node("span");
     if(c.website){const a=node("a","","Official website ↗");a.href=c.website;a.target="_blank";a.rel="noopener noreferrer";site.append(a);}
-    const actions=node("div","actions");actions.append(button("Edit",()=>edit(c)));
+    const actions=node("div","actions");actions.append(button("Edit",()=>edit(c)),button("Remove",()=>{deleteId=c.id;$("confirm").showModal();}));
     bottom.append(site,actions);card.append(bottom);list.append(card);
   }
 }
@@ -113,4 +113,6 @@ $("college-form").addEventListener("submit",e=>{
   const c={id,name:f.get("name").trim(),website:f.get("website").trim(),deadline:f.get("deadline"),fee:f.get("fee")===""?"":Number(f.get("fee")),round:f.get("round"),waiver:f.get("waiver"),status:f.get("status"),notes:f.get("notes").trim(),documents};
   try {validate([c]);const next=old?colleges.map(x=>x.id===id?c:x):[...colleges,c];if(save(next)){$("editor").close();render();}}catch(error){announce(error.message);}
 });
+$("cancel-delete").addEventListener("click",()=>$("confirm").close());
+$("confirm-delete").addEventListener("click",()=>{if(save(colleges.filter(c=>c.id!==deleteId))){$("confirm").close();render();}});
 render();
