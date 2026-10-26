@@ -5,6 +5,7 @@ A college application planner with device-local checklists.
 ## Run locally
 
 Use Node 22.13+ and run `node server.mjs`, then open http://127.0.0.1:3000.
+Install the HTML parser first with `pnpm install --frozen-lockfile`.
 
 ## Repository history
 
