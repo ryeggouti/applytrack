@@ -95,6 +95,22 @@ function renderResearch(data){
   const docs=$("research-documents");docs.replaceChildren();
   if(!data.documents.length)docs.append(node("p","field-help","No document suggestions were extracted. That does not mean this university requires no documents. Use its official checklist."));
   data.documents.forEach((item,i)=>docs.append(evidenceCard(item,true,i)));
+  if(data.documents.length){
+    const label=node("label","evidence-choice"),selectAll=node("input");
+    selectAll.type="checkbox";
+    label.append(selectAll,node("strong","","Select all documents"));
+    docs.prepend(label);
+    const choices=[...docs.querySelectorAll("input[data-research-index]")];
+    selectAll.addEventListener("change",()=>{
+      choices.forEach(input=>{input.checked=selectAll.checked;});
+      selectAll.indeterminate=false;
+    });
+    choices.forEach(input=>input.addEventListener("change",()=>{
+      const count=choices.filter(input=>input.checked).length;
+      selectAll.checked=count===choices.length;
+      selectAll.indeterminate=count>0&&count<choices.length;
+    }));
+  }
   const other=$("research-other");other.replaceChildren();
   for(const [title,items] of [["Dates and deadlines",data.deadlines],["Fees and waivers",data.fees]]){
     other.append(node("h4","",title));
@@ -107,7 +123,7 @@ function renderResearch(data){
 }
 $("research-apply").addEventListener("click",()=>{
   if(!researchReport)return;
-  const selected=[...$("research-documents").querySelectorAll("input:checked")].map(input=>researchReport.documents[Number(input.dataset.researchIndex)]);
+  const selected=[...$("research-documents").querySelectorAll("input[data-research-index]:checked")].map(input=>researchReport.documents[Number(input.dataset.researchIndex)]);
   const wasEditing=$("editor").open,form=$("college-form");
   // If launched from the list, create a new draft rather than replace any saved college.
   if(!wasEditing){edit();form.elements.name.value=$("university-query").value.trim();form.elements.website.value=$("research-url").value.trim();}
