@@ -56,7 +56,8 @@ function render() {
   $("docs").textContent=documents.filter(d=>d.done).length+" / "+documents.length;
   const upcoming=colleges.filter(c=>c.status!=="Submitted"&&c.deadline>=today()).sort((a,b)=>a.deadline.localeCompare(b.deadline));
   $("next").textContent=upcoming.length?dateLabel(upcoming[0].deadline):"—";
-  const visible=colleges;
+  const query=$("search").value.toLocaleLowerCase().trim(), filter=$("filter").value;
+  const visible=colleges.filter(c=>c.name.toLocaleLowerCase().includes(query)&&(!filter||c.status===filter)).sort((a,b)=>$("sort").value==="name"?a.name.localeCompare(b.name):(a.deadline||"9999").localeCompare(b.deadline||"9999"));
   const list=$("list");list.replaceChildren();
   if(!visible.length) {
     const empty=node("div","empty");
@@ -102,6 +103,7 @@ function edit(c) {
 }
 $("add").addEventListener("click",()=>edit());
 document.querySelectorAll(".close").forEach(b=>b.addEventListener("click",()=>$("editor").close()));
+for(const id of ["search","filter","sort"])$(id).addEventListener("input",render);
 $("college-form").addEventListener("submit",e=>{
   e.preventDefault();
   const f=new FormData(e.currentTarget),id=f.get("id")||crypto.randomUUID(),old=colleges.find(c=>c.id===id);
