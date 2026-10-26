@@ -1,1 +1,16 @@
-<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ApplyTrack</title><body><h1>ApplyTrack</h1><p>A college application planner. The standalone server is ready.</p></body></html>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Your college applications, one clear next step at a time."><title>ApplyTrack — Your next chapter</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<aside><a class="brand" href="#"><span class="mark">a<span>↗</span></span> ApplyTrack</a><div class="workspace">YOUR WORKSPACE</div><div class="nav active">▦ <span>My applications</span></div><div class="aside-note"><span>✦</span><h3>A little progress,<br>every day.</h3><p>Your next chapter starts with one next step.</p></div><div class="private" hidden="">◉ Saved on this device<br><small>Your checklist stays on this device.</small></div></aside>
+<main>
+<header><span>YOUR NEXT CHAPTER</span><div class="header-actions"><button class="text-btn" id="export" hidden="">↓ Export backup</button><button class="text-btn" id="import" hidden="">↑ Import</button><input type="file" id="file" accept=".json,application/json" hidden=""></div></header>
+<section class="intro"><div><div class="eyebrow">A LITTLE MORE ORGANIZED. A LOT MORE POSSIBLE.</div><h1>Make room for<br>what’s next<span>.</span></h1><p>Every college, deadline, and document.<br>One place to keep moving forward.</p></div><div class="intro-art" aria-hidden="true"><div class="orbit"></div><div class="paper"><span>THE NEXT CHAPTER</span><i></i><i></i><i></i><b>↗</b></div><div class="spark">✦</div><div class="pill">One step closer ✓</div></div></section>
+<div id="notice" role="status" hidden=""></div>
+<section class="stats" aria-label="Application overview" hidden=""><div><span>Colleges on your list</span><strong id="total">0</strong></div><div hidden=""><span>Submitted applications</span><strong id="submitted">0</strong></div><div hidden=""><span>Documents ready</span><strong id="docs">0 / 0</strong></div><div hidden=""><span>Next deadline</span><strong id="next">—</strong></div></section>
+<section class="applications"><div class="section-head"><div><h2>Your college list <span id="count">0</span></h2><p>Big ambitions. Manageable steps.</p></div></div><div class="toolbar" hidden=""><label class="search">⌕ <input id="search" type="search" placeholder="Find a college…" aria-label="Find a college"></label><select id="filter" aria-label="Filter by status"><option value="">All statuses</option><option>Planning</option><option>In progress</option><option>Submitted</option></select><select id="sort" aria-label="Sort colleges"><option value="deadline">Nearest deadline</option><option value="name">College name</option></select></div><div id="list"><div class="empty"><div class="empty-icon">↗</div><h3>Your future has a starting point.</h3><p>A calmer place to plan your college applications.</p></div></div></section>
+<footer><span>Built for your journey. At your pace.</span><span>Confirm deadlines and requirements on each college’s official website.</span></footer>
+</main>
+
+
+
+
+</body></html>
