@@ -57,11 +57,18 @@ function render() {
     if(c.notes)card.append(node("div","notes",c.notes));
     const bottom=node("div","card-bottom"),site=node("span");
     if(c.website){const a=node("a","","Official website ↗");a.href=c.website;a.target="_blank";a.rel="noopener noreferrer";site.append(a);}
-    const actions=node("div","actions");
+    const actions=node("div","actions");actions.append(button("Edit",()=>edit(c)));
     bottom.append(site,actions);card.append(bottom);list.append(card);
   }
 }
-function edit() { const form=$("college-form");form.reset();form.elements.id.value="";$("editor").showModal();form.elements.name.focus(); }
+function edit(c) {
+  const form=$("college-form");form.reset();
+  $("dialog-title").textContent=c?"Edit college":"Add a college";
+  for(const name of ["id","name","website","deadline","fee","round","waiver","status","notes"]) if(c)form.elements[name].value=c[name];
+  form.elements.id.value=c?.id||"";
+  form.elements.documents.value=c?c.documents.map(d=>d.name).join("\n"):"";
+  $("editor").showModal();form.elements.name.focus();
+}
 $("add").addEventListener("click",()=>edit());
 document.querySelectorAll(".close").forEach(b=>b.addEventListener("click",()=>$("editor").close()));
 $("college-form").addEventListener("submit",e=>{
