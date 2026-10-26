@@ -1,0 +1,12 @@
+import {test,before,after} from "node:test";
+import assert from "node:assert/strict";
+import {server} from "../server.mjs";
+let origin;
+before(async()=>{await new Promise(resolve=>server.listen(0,"127.0.0.1",resolve));origin="http://127.0.0.1:"+server.address().port;});
+after(async()=>{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));});
+test("serves the planner and its JavaScript",async()=>{const page=await fetch(origin);assert.equal(page.status,200);assert.match(await page.text(),/Research a university|research-dialog/);assert.equal((await fetch(origin+"/research.js")).status,200);});
+test("university lookup returns a known official starting page",async()=>{const response=await fetch(origin+"/api/universities?q=MIT");assert.equal(response.status,200);assert.equal((await response.json()).universities[0].name,"Massachusetts Institute of Technology");});
+test("rejects cross-origin research requests",async()=>{const response=await fetch(origin+"/api/research",{method:"POST",headers:{Origin:"https://other.example","Content-Type":"application/json"},body:"{}"});assert.equal(response.status,403);});
+test("rejects malformed and unsafe research input",async()=>{const response=await fetch(origin+"/api/research",{method:"POST",body:JSON.stringify({url:"https://127.0.0.1",applicant:"international",level:"first-year"})});assert.equal(response.status,400);});
+test("does not serve files outside public",async()=>{const response=await fetch(origin+"/%2e%2e%2fpackage.json");assert.equal(response.status,403);});
+test("unknown endpoints return JSON errors",async()=>{const response=await fetch(origin+"/api/missing");assert.equal(response.status,404);assert.equal((await response.json()).error,"Endpoint not found.");});
