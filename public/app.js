@@ -40,6 +40,11 @@ function button(text,fn,cls="text-btn") { const b=node("button",cls,text);b.type
 function render() {
   $("total").textContent=colleges.length;
   $("count").textContent=colleges.length;
+  $("submitted").textContent=colleges.filter(c=>c.status==="Submitted").length;
+  const documents=colleges.flatMap(c=>c.documents);
+  $("docs").textContent=documents.filter(d=>d.done).length+" / "+documents.length;
+  const upcoming=colleges.filter(c=>c.status!=="Submitted"&&c.deadline>=today()).sort((a,b)=>a.deadline.localeCompare(b.deadline));
+  $("next").textContent=upcoming.length?dateLabel(upcoming[0].deadline):"—";
   const visible=colleges;
   const list=$("list");list.replaceChildren();
   if(!visible.length) {
@@ -52,8 +57,11 @@ function render() {
   }
   for(const c of visible) {
     const card=node("article","card"),top=node("div","card-top"),title=node("div");
-    title.append(node("div","college-name",c.name));
-    top.append(title);card.append(top);
+    title.append(node("div","college-name",c.name),node("div","round",c.round));
+    top.append(title,node("span","badge"+(c.status==="Submitted"?" submitted":""),c.status));card.append(top);
+    const meta=node("div","meta");
+    meta.append(node("span",c.deadline&&c.deadline<today()&&c.status!=="Submitted"?"due":"",c.deadline?(c.deadline<today()&&c.status!=="Submitted"?"Past deadline · ":"Due · ")+dateLabel(c.deadline):"No deadline set"));
+    card.append(meta);
     if(c.notes)card.append(node("div","notes",c.notes));
     const bottom=node("div","card-bottom"),site=node("span");
     if(c.website){const a=node("a","","Official website ↗");a.href=c.website;a.target="_blank";a.rel="noopener noreferrer";site.append(a);}
