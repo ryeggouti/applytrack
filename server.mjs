@@ -2,34 +2,22 @@ import http from "node:http";
 import fs from "node:fs/promises";
 import path from "node:path";
 import {fileURLToPath} from "node:url";
+import {createResearchHandler,createUniversityHandler} from "./lib/research-http.mjs";
+import {research,academicURL,searchUniversities} from "./lib/admissions.mjs";
 const root=path.join(path.dirname(fileURLToPath(import.meta.url)),"public");
-const active=new Set();
+const researchHandler=createResearchHandler({research,validateURL:academicURL});
+const universityHandler=createUniversityHandler(searchUniversities);
 function json(res,status,data){res.writeHead(status,{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"});res.end(JSON.stringify(data));}
 export const server=http.createServer(async(req,res)=>{
   try {
-    const url=new URL(req.url,"http://"+(req.headers.host||"localhost"));
-    if (url.pathname === "/api/universities" && req.method === "GET") {
-      const query=(url.searchParams.get("q")||"").trim();
-      if(query.length<2||query.length>150)return json(res,400,{error:"Enter a university name between 2 and 150 characters."});
-      const {searchUniversities}=await import("./lib/universities.mjs");
-      return json(res,200,await searchUniversities(query));
-    }
-    if (url.pathname === "/api/research" && req.method === "POST") {
-      const expected=process.env.PUBLIC_ORIGIN||url.origin;
-      if(req.headers.origin&&req.headers.origin!==expected)return json(res,403,{error:"Use research from ApplyTrack."});
-      const owner=req.socket.remoteAddress||"local";
-      if(active.has(owner))return json(res,429,{error:"Your previous lookup is still running."});
-      active.add(owner);
-      try {
-        let raw="";
-        for await(const chunk of req){raw+=chunk.toString("utf8");if(Buffer.byteLength(raw)>3000)return json(res,413,{error:"Request too large."});}
-        const data=JSON.parse(raw);
-        if(typeof data.url!=="string"||data.url.length>1000||!["domestic","international"].includes(data.applicant)||!["first-year","transfer"].includes(data.level))return json(res,400,{error:"Choose an official URL, applicant type and entry type."});
-        const {academicURL}=await import("./lib/urls.mjs");academicURL(data.url);
-        const {research}=await import("./lib/crawler.mjs");
-        return json(res,200,await research(data));
-      } catch(error) { return json(res,400,{error:error.message||"Lookup failed."}); }
-      finally {active.delete(owner);}
+    const url=new URL(req.url,process.env.PUBLIC_ORIGIN||"http://"+(req.headers.host||"localhost"));
+    if (["/api/universities","/api/research"].includes(url.pathname)) {
+      const headers=new Headers(req.headers);
+      headers.set("cf-connecting-ip",req.socket.remoteAddress||"local");
+      const incoming=new Request(url,{method:req.method,headers,...(req.method==="POST"?{body:req,duplex:"half"}:{})});
+      const result=await (url.pathname==="/api/research"?researchHandler:universityHandler)(incoming);
+      res.writeHead(result.status,Object.fromEntries(result.headers));
+      return res.end(await result.text());
     }
     if(url.pathname.startsWith("/api/"))return json(res,404,{error:"Endpoint not found."});
     if(!["GET","HEAD"].includes(req.method))return json(res,405,{error:"Method not allowed."});
