@@ -119,4 +119,19 @@ $("export").addEventListener("click",()=>{
   const blob=new Blob([JSON.stringify({format:"ApplyTrack",version:1,colleges},null,2)],{type:"application/json"});
   const a=node("a");const url=URL.createObjectURL(blob);a.href=url;a.download="applytrack-"+today()+".json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 });
+$("import").addEventListener("click",()=>$("file").click());
+$("file").addEventListener("change",async e=>{
+  const file=e.target.files[0];if(!file)return;
+  try {
+    if(file.size>2000000)throw new Error("Choose a backup smaller than 2 MB.");
+    const data=JSON.parse(await file.text());
+    if(data.format!=="ApplyTrack"||data.version!==1)throw new Error("Choose an ApplyTrack version 1 backup.");
+    const imported=validate(data.colleges);
+    const existingIds=new Set(colleges.map(c=>c.id));
+    const additions=imported.filter(c=>!existingIds.has(c.id));
+    if(colleges.length+additions.length>1000)throw new Error("Your combined list cannot exceed 1,000 colleges.");
+    if(save([...colleges,...additions])){render();announce("Imported "+additions.length+" colleges. Existing entries were kept; matching IDs were skipped.");}
+  }catch(error){announce(error instanceof SyntaxError?"This file is not a valid JSON backup. Your list has not changed.":error.message);}
+  e.target.value="";
+});
 render();
