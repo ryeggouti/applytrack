@@ -2,6 +2,13 @@
 
 A college application planner with device-local checklists.
 
+**[Open the GitHub Pages prototype](https://ryeggouti.github.io/applytrack/)**
+
+The public prototype supports manual college planning, checklists and backups.
+Automatic university research is available through its link to the
+[server-hosted prototype](https://applytrack-ryeggouti.maplebison10.chatgpt.site),
+which currently requires the owner's ChatGPT sign-in.
+
 ## Run locally
 
 Use Node 22.13+ and run `node server.mjs`, then open http://127.0.0.1:3000.
