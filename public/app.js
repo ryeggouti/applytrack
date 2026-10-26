@@ -61,6 +61,8 @@ function render() {
     top.append(title,node("span","badge"+(c.status==="Submitted"?" submitted":""),c.status));card.append(top);
     const meta=node("div","meta");
     meta.append(node("span",c.deadline&&c.deadline<today()&&c.status!=="Submitted"?"due":"",c.deadline?(c.deadline<today()&&c.status!=="Submitted"?"Past deadline · ":"Due · ")+dateLabel(c.deadline):"No deadline set"));
+    meta.append(node("span","",c.fee===""?"Fee not entered":new Intl.NumberFormat(undefined,{style:"currency",currency:"USD"}).format(c.fee)+" application fee"));
+    if(c.waiver!=="Not needed")meta.append(node("span","","Waiver · "+c.waiver));
     card.append(meta);
     const ready=c.documents.filter(d=>d.done).length,ph=node("div","progress-head");
     ph.append(node("span","","Document checklist"),node("span","",ready+" of "+c.documents.length+" ready"));card.append(ph);
