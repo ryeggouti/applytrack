@@ -1,6 +1,7 @@
 // Research never writes the college list; it only fills an editable form for review.
 let researchReport=null,researchTargetId=null,lookupController=null,lookupSequence=0;
 const researchDialog=$("research-dialog");
+const staticResearch=window.APPLYTRACK_HOSTING?.research==="prototype";
 const researchLaunch=button("✦ Research a university",()=>openResearch(),"secondary");
 researchLaunch.id="research-launch";
 const headingActions=node("div","heading-actions");
@@ -8,6 +9,19 @@ $("add").before(headingActions);headingActions.append(researchLaunch,$("add"));
 const editLaunch=button("✦ Find requirements for this college",()=>openResearch(true),"secondary");
 editLaunch.id="research-editor-launch";
 $("college-form").querySelector(".form-intro").after(editLaunch);
+let prototypeLink=null;
+if(staticResearch){
+  $("university-search").hidden=true;
+  $("research-form").hidden=true;
+  researchDialog.querySelector(".form-intro").textContent="This GitHub Pages prototype supports your college list, checklists, deadlines and backups. Automatic university research runs in the server-hosted prototype.";
+  const note=node("div","research-info");
+  note.append(node("p","","The research prototype currently requires the owner’s ChatGPT sign-in. Lists are saved separately for each site address; use Export and Import to move a list between versions."));
+  prototypeLink=node("a","primary","Open automatic university research ↗");
+  prototypeLink.href=window.APPLYTRACK_HOSTING.prototypeURL;
+  prototypeLink.target="_blank";prototypeLink.rel="noopener noreferrer";
+  prototypeLink.style.display="inline-block";prototypeLink.style.textDecoration="none";
+  note.append(prototypeLink);$("research-form").after(note);
+}
 function researchStatus(message,error=false){
   const el=$("research-status");el.hidden=false;el.textContent=message;el.className=error?"research-error":"research-info";
 }
@@ -15,6 +29,7 @@ function stopLookup(){lookupSequence++;lookupController?.abort();lookupControlle
 function clearReport(){researchReport=null;$("research-results").hidden=true;$("research-documents").replaceChildren();}
 function openResearch(fromEditor=false){
   stopLookup();clearReport();$("research-status").hidden=true;
+  if(staticResearch){researchDialog.showModal();prototypeLink.focus();return;}
   researchTargetId=fromEditor?$("college-form").elements.id.value:null;
   const form=$("college-form");
   $("university-query").value=fromEditor?form.elements.name.value:"";
