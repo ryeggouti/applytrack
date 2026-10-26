@@ -92,7 +92,7 @@ function renderResearch(data){
   for(const p of data.pages)details.append(sourceLink(p.url,p.title),node("br"));sources.append(details);
   const docs=$("research-documents");docs.replaceChildren();
   if(!data.documents.length)docs.append(node("p","field-help","No document suggestions were extracted. That does not mean this university requires no documents. Use its official checklist."));
-  data.documents.forEach((item,i)=>docs.append(evidenceCard(item,false,i)));
+  data.documents.forEach((item,i)=>docs.append(evidenceCard(item,true,i)));
   const other=$("research-other");other.replaceChildren();
   for(const [title,items] of [["Dates and deadlines",data.deadlines],["Fees and waivers",data.fees]]){
     other.append(node("h4","",title));
@@ -101,5 +101,24 @@ function renderResearch(data){
   }
   const warnings=$("research-warnings");warnings.replaceChildren();
   for(const warning of data.warnings)warnings.append(node("p","field-help","Some pages were not inspected: "+warning));
-
+  $("research-apply").disabled=!data.pages.length;
 }
+$("research-apply").addEventListener("click",()=>{
+  if(!researchReport)return;
+  const selected=[...$("research-documents").querySelectorAll("input:checked")].map(input=>researchReport.documents[Number(input.dataset.researchIndex)]);
+  const wasEditing=$("editor").open,form=$("college-form");
+  // If launched from the list, create a new draft rather than replace any saved college.
+  if(!wasEditing){edit();form.elements.name.value=$("university-query").value.trim();form.elements.website.value=$("research-url").value.trim();}
+  else if(form.elements.id.value!==researchTargetId){researchStatus("The college form changed. Close research and reopen it for that college.",true);return;}
+  const existing=form.elements.documents.value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+  const labels=selected.map(item=>item.label+" — "+item.qualification);
+  form.elements.documents.value=[...new Set([...existing,...labels])].join("\n");
+  const report=researchReport;
+  const reference=["Official-source research · "+report.profile.applicant+" / "+report.profile.level+" · "+new Date(report.checkedAt).toLocaleDateString(),
+    ...[...new Set(report.pages.map(p=>p.url))],
+    "Review the original source for conditions, entry year and admission round. Suggestions are not a verified checklist."].join("\n");
+  const combined=[form.elements.notes.value.trim(),reference].filter(Boolean).join("\n\n");
+  if(combined.length<=5000)form.elements.notes.value=combined;
+  researchDialog.close();form.elements.documents.focus();
+  announce("Research suggestions added to the college form. Review all fields, then save. No deadline or fee was guessed.");
+});
