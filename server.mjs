@@ -8,7 +8,12 @@ function json(res,status,data){res.writeHead(status,{"Content-Type":"application
 export const server=http.createServer(async(req,res)=>{
   try {
     const url=new URL(req.url,"http://"+(req.headers.host||"localhost"));
-
+    if (url.pathname === "/api/universities" && req.method === "GET") {
+      const query=(url.searchParams.get("q")||"").trim();
+      if(query.length<2||query.length>150)return json(res,400,{error:"Enter a university name between 2 and 150 characters."});
+      const {searchUniversities}=await import("./lib/universities.mjs");
+      return json(res,200,await searchUniversities(query));
+    }
 
     if(url.pathname.startsWith("/api/"))return json(res,404,{error:"Endpoint not found."});
     if(!["GET","HEAD"].includes(req.method))return json(res,405,{error:"Method not allowed."});
