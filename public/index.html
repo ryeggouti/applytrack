@@ -11,9 +11,14 @@
 <body>
 
 <aside>
-  <a class="brand" href="#"><span class="mark">a<span>↗</span></span> ApplyTrack</a>
+  <a class="brand" href="#applications"><span class="mark">a<span>↗</span></span> ApplyTrack</a>
   <div class="workspace">YOUR WORKSPACE</div>
-  <div class="nav active">▦ <span>My applications</span></div>
+  <nav class="workspace-nav" aria-label="Your workspace">
+    <a class="nav active" href="#applications" data-view="applications" aria-current="page"><span aria-hidden="true">▦</span><span>My applications</span></a>
+    <a class="nav" href="#deadlines" data-view="deadlines"><span aria-hidden="true">◷</span><span>Deadlines</span><span id="nav-deadlines-count" class="nav-count" hidden></span></a>
+    <a class="nav" href="#documents" data-view="documents"><span aria-hidden="true">☑</span><span>Documents</span><span id="nav-documents-count" class="nav-count" hidden></span></a>
+    <a class="nav" href="#about" data-view="about"><span aria-hidden="true">ⓘ</span><span>About ApplyTrack</span></a>
+  </nav>
   <div class="aside-note">
     <span>✦</span>
     <h3>A little progress,<br>every day.</h3>
@@ -35,10 +40,13 @@
     </div>
   </header>
 
+  <div id="notice" role="status" hidden></div>
+
+  <div id="view-applications" data-workspace-view="applications">
   <section class="intro">
     <div>
       <div class="eyebrow">A LITTLE MORE ORGANIZED. A LOT MORE POSSIBLE.</div>
-      <h1>Make room for<br>what’s next<span>.</span></h1>
+      <h1 tabindex="-1">Make room for<br>what’s next<span>.</span></h1>
       <p>Every college, deadline, and document.<br>One place to keep moving forward.</p>
     </div>
     <div class="intro-art" aria-hidden="true">
@@ -52,8 +60,6 @@
       <div class="pill">One step closer ✓</div>
     </div>
   </section>
-
-  <div id="notice" role="status" hidden></div>
 
   <section class="stats" aria-label="Application overview">
     <div>
@@ -100,6 +106,35 @@
     </div>
 
     <div id="list"></div>
+  </section>
+
+  </div>
+
+  <section id="view-deadlines" data-workspace-view="deadlines" class="workspace-view" hidden aria-labelledby="deadlines-heading">
+    <div class="view-heading"><div class="eyebrow">A LITTLE MORE AHEAD OF THINGS.</div><h1 id="deadlines-heading" tabindex="-1">Your next dates.</h1><p>Every saved deadline, together. See what’s coming and what still needs a date.</p></div>
+    <div id="deadline-overview" class="view-summary"></div>
+    <div id="deadline-list"></div>
+    <p class="field-help">Dates come from your saved college details. Confirm the round and admission year on each university’s official website.</p>
+  </section>
+
+  <section id="view-documents" data-workspace-view="documents" class="workspace-view" hidden aria-labelledby="documents-heading">
+    <div class="view-heading"><div class="eyebrow">ONE SMALL CHECK AT A TIME.</div><h1 id="documents-heading" tabindex="-1">Make progress visible.</h1><p>Your document checklists, gathered in one place. Check an item here and it updates your application too.</p></div>
+    <div id="document-overview" class="view-summary"></div>
+    <div id="document-list"></div>
+  </section>
+
+  <section id="view-about" data-workspace-view="about" class="workspace-view" hidden aria-labelledby="about-heading">
+    <div class="view-heading"><div class="eyebrow">A LITTLE CLARITY FOR YOUR NEXT CHAPTER.</div><h1 id="about-heading" tabindex="-1">Big plans.<br>A little more breathing room.</h1><p>ApplyTrack brings your colleges, deadlines, and documents together, so your next step feels a little easier to find.</p></div>
+    <div class="creator-card">
+      <div class="creator-avatar" aria-hidden="true">r<span>↗</span></div>
+      <div><span class="eyebrow">CREATED BY</span><h2>ryeggouti</h2><p>A simpler place to keep your college applications moving.</p><a href="https://github.com/ryeggouti" target="_blank" rel="noopener noreferrer">Find me on GitHub ↗</a></div>
+      <span class="creator-spark" aria-hidden="true">✦</span>
+    </div>
+    <div class="about-grid">
+      <article class="about-card"><span class="about-symbol" aria-hidden="true">◉</span><h2>Your list stays yours.</h2><p>Your college list is saved in this browser on this device. Export a backup to keep a copy or move it to another browser.</p><button type="button" class="secondary" id="about-export">Export my backup ↓</button></article>
+      <article class="about-card"><span class="about-symbol" aria-hidden="true">↗</span><h2>A source for every suggestion.</h2><p>Research reads public university pages. Only the university URL and applicant choices are sent; your notes and checklists stay here. Review official dates and conditions before saving.</p><a href="#applications">Back to my applications ↗</a></article>
+    </div>
+    <div class="about-steps"><h2>A few steps, a little less overwhelm.</h2><ol><li><strong>Build your list.</strong> Add a college or research its official requirements.</li><li><strong>Make it yours.</strong> Confirm the date, round, fee and documents you need.</li><li><strong>Keep moving.</strong> Check off documents, update your status and export a backup.</li></ol></div>
   </section>
 
   <footer>
@@ -342,6 +377,7 @@ Recommendation"></textarea>
 <script src="app.js"></script>
 <script src="research.js"></script>
 <script src="research-autofill.js"></script>
+<script src="workspace.js"></script>
 
 </body>
 </html>
