@@ -1,34 +1,325 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Your college applications, one clear next step at a time."><title>ApplyTrack — Your next chapter</title><link rel="stylesheet" href="style.css"></head>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Your college applications, one clear next step at a time.">
+  <title>ApplyTrack — Your next chapter</title>
+  <link rel="stylesheet" href="style.css">
+</head>
 <body>
-<aside><a class="brand" href="#"><span class="mark">a<span>↗</span></span> ApplyTrack</a><div class="workspace">YOUR WORKSPACE</div><div class="nav active">▦ <span>My applications</span></div><div class="aside-note"><span>✦</span><h3>A little progress,<br>every day.</h3><p>Your next chapter starts with one next step.</p></div><div class="private">◉ Saved on this device<br><small>Your checklist stays on this device.</small></div></aside>
+
+<aside>
+  <a class="brand" href="#"><span class="mark">a<span>↗</span></span> ApplyTrack</a>
+  <div class="workspace">YOUR WORKSPACE</div>
+  <div class="nav active">▦ <span>My applications</span></div>
+  <div class="aside-note">
+    <span>✦</span>
+    <h3>A little progress,<br>every day.</h3>
+    <p>Your next chapter starts with one next step.</p>
+  </div>
+  <div class="private">
+    ◉ Saved on this device<br>
+    <small>Your checklist stays on this device.</small>
+  </div>
+</aside>
+
 <main>
-<header><span>YOUR NEXT CHAPTER</span><div class="header-actions"><button class="text-btn" id="export">↓ Export backup</button><button class="text-btn" id="import">↑ Import</button><input type="file" id="file" accept=".json,application/json" hidden=""></div></header>
-<section class="intro"><div><div class="eyebrow">A LITTLE MORE ORGANIZED. A LOT MORE POSSIBLE.</div><h1>Make room for<br>what’s next<span>.</span></h1><p>Every college, deadline, and document.<br>One place to keep moving forward.</p></div><div class="intro-art" aria-hidden="true"><div class="orbit"></div><div class="paper"><span>THE NEXT CHAPTER</span><i></i><i></i><i></i><b>↗</b></div><div class="spark">✦</div><div class="pill">One step closer ✓</div></div></section>
-<div id="notice" role="status" hidden=""></div>
-<section class="stats" aria-label="Application overview"><div><span>Colleges on your list</span><strong id="total">0</strong></div><div><span>Submitted applications</span><strong id="submitted">0</strong></div><div><span>Documents ready</span><strong id="docs">0 / 0</strong></div><div><span>Next deadline</span><strong id="next">—</strong></div></section>
-<section class="applications"><div class="section-head"><div><h2>Your college list <span id="count">0</span></h2><p>Big ambitions. Manageable steps.</p></div><button class="primary" id="add">+ Add a college</button></div><div class="toolbar"><label class="search">⌕ <input id="search" type="search" placeholder="Find a college…" aria-label="Find a college"></label><select id="filter" aria-label="Filter by status"><option value="">All statuses</option><option>Planning</option><option>In progress</option><option>Submitted</option></select><select id="sort" aria-label="Sort colleges"><option value="deadline">Nearest deadline</option><option value="name">College name</option></select></div><div id="list"></div></section>
-<footer><span>Built for your journey. At your pace.</span><span>Confirm deadlines and requirements on each college’s official website.</span></footer>
+  <header>
+    <span>YOUR NEXT CHAPTER</span>
+    <div class="header-actions">
+      <button class="text-btn" id="export">↓ Export backup</button>
+      <button class="text-btn" id="import">↑ Import</button>
+      <input type="file" id="file" accept=".json,application/json" hidden>
+    </div>
+  </header>
+
+  <section class="intro">
+    <div>
+      <div class="eyebrow">A LITTLE MORE ORGANIZED. A LOT MORE POSSIBLE.</div>
+      <h1>Make room for<br>what’s next<span>.</span></h1>
+      <p>Every college, deadline, and document.<br>One place to keep moving forward.</p>
+    </div>
+    <div class="intro-art" aria-hidden="true">
+      <div class="orbit"></div>
+      <div class="paper">
+        <span>THE NEXT CHAPTER</span>
+        <i></i><i></i><i></i>
+        <b>↗</b>
+      </div>
+      <div class="spark">✦</div>
+      <div class="pill">One step closer ✓</div>
+    </div>
+  </section>
+
+  <div id="notice" role="status" hidden></div>
+
+  <section class="stats" aria-label="Application overview">
+    <div>
+      <span>Colleges on your list</span>
+      <strong id="total">0</strong>
+    </div>
+    <div>
+      <span>Submitted applications</span>
+      <strong id="submitted">0</strong>
+    </div>
+    <div>
+      <span>Documents ready</span>
+      <strong id="docs">0 / 0</strong>
+    </div>
+    <div>
+      <span>Next deadline</span>
+      <strong id="next">—</strong>
+    </div>
+  </section>
+
+  <section class="applications">
+    <div class="section-head">
+      <div>
+        <h2>Your college list <span id="count">0</span></h2>
+        <p>Big ambitions. Manageable steps.</p>
+      </div>
+      <button class="primary" id="add">+ Add a college</button>
+    </div>
+
+    <div class="toolbar">
+      <label class="search">
+        ⌕ <input id="search" type="search" placeholder="Find a college…" aria-label="Find a college">
+      </label>
+      <select id="filter" aria-label="Filter by status">
+        <option value="">All statuses</option>
+        <option>Planning</option>
+        <option>In progress</option>
+        <option>Submitted</option>
+      </select>
+      <select id="sort" aria-label="Sort colleges">
+        <option value="deadline">Nearest deadline</option>
+        <option value="name">College name</option>
+      </select>
+    </div>
+
+    <div id="list"></div>
+  </section>
+
+  <footer>
+    <span>Built for your journey. At your pace.</span>
+    <span>Confirm deadlines and requirements on each college’s official website.</span>
+  </footer>
 </main>
-<dialog id="editor"><form id="college-form"><div class="dialog-head"><div><span class="eyebrow">YOUR COLLEGE LIST</span><h2 id="dialog-title">Add a college</h2></div><button type="button" class="close" aria-label="Close dialog">×</button></div><p class="form-intro">Anywhere you want to go. Add the details you’ve confirmed.</p><input type="hidden" name="id"><label>College name <input name="name" required="" maxlength="150" placeholder="e.g. Your dream college"></label><label>Official website <input name="website" type="url" placeholder="https://…" maxlength="500"></label><div class="two"><label>Application deadline <input name="deadline" type="date"></label><label>Admission round <select name="round"><option>Regular decision</option><option>Early action</option><option>Early decision</option><option>Rolling admission</option><option>Other</option></select></label></div><div class="two"><label>Application fee (USD) <input name="fee" type="number" min="0" max="100000" step="0.01" placeholder="Optional"></label><label>Fee waiver <select name="waiver"><option>Not needed</option><option>To request</option><option>Requested</option><option>Approved</option></select></label></div><label>Application status <select name="status"><option>Planning</option><option>In progress</option><option>Submitted</option></select></label><label>Required documents <textarea name="documents" rows="4" placeholder="One document per line:
+
+<dialog id="editor">
+  <form id="college-form">
+    <div class="dialog-head">
+      <div>
+        <span class="eyebrow">YOUR COLLEGE LIST</span>
+        <h2 id="dialog-title">Add a college</h2>
+      </div>
+      <button type="button" class="close" aria-label="Close dialog">×</button>
+    </div>
+
+    <p class="form-intro">
+      Anywhere you want to go. Add the details you’ve confirmed.
+    </p>
+
+    <input type="hidden" name="id">
+
+    <label>
+      College name
+      <input name="name" required maxlength="150" placeholder="e.g. Your dream college">
+    </label>
+
+    <label>
+      Official website
+      <input name="website" type="url" placeholder="https://…" maxlength="500">
+    </label>
+
+    <div class="two">
+      <label>
+        Application deadline
+        <input name="deadline" type="date">
+      </label>
+      <label>
+        Admission round
+        <select name="round">
+          <option>Regular decision</option>
+          <option>Early action</option>
+          <option>Early decision</option>
+          <option>Rolling admission</option>
+          <option>Other</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="two">
+      <label>
+        Application fee (USD)
+        <input name="fee" type="number" min="0" max="100000" step="0.01" placeholder="Optional">
+      </label>
+      <label>
+        Fee waiver
+        <select name="waiver">
+          <option>Unknown</option>
+          <option>Not needed</option>
+          <option>To request</option>
+          <option>Requested</option>
+          <option>Approved</option>
+        </select>
+      </label>
+    </div>
+
+    <label>
+      Application status
+      <select name="status">
+        <option>Planning</option>
+        <option>In progress</option>
+        <option>Submitted</option>
+      </select>
+    </label>
+
+    <label>
+      Required documents
+      <textarea name="documents" rows="4" placeholder="One document per line:
 Transcript
 Personal essay
-Recommendation"></textarea></label><small>Use your college’s checklist. There are no universal document requirements.</small><label>Personal notes <textarea name="notes" rows="3" maxlength="5000" placeholder="Questions, ideas, or anything to remember…"></textarea></label><div class="form-actions"><button type="button" class="secondary close">Cancel</button><button class="primary" type="submit">Save college ↗</button></div></form></dialog>
-<dialog id="confirm"><h2>Remove this college?</h2><p>The application and its checklist will be removed from this device.</p><div class="form-actions"><button class="secondary" id="cancel-delete">Keep college</button><button class="danger" id="confirm-delete">Remove college</button></div></dialog>
-<dialog id="research-dialog" aria-labelledby="research-title">
-  <div class="dialog-head"><div><span class="eyebrow">OFFICIAL-SOURCE RESEARCH</span><h2 id="research-title">Find university requirements</h2></div><button class="close" id="research-close" aria-label="Close research">×</button></div>
-  <p class="form-intro">Start with a university name or its official admissions URL. We scan public pages and show the evidence for you to review.</p>
-  <form id="university-search"><label for="university-query">University name</label><div class="research-search-row"><input id="university-query" placeholder="e.g. MIT, Harvard, or your university" minlength="2" maxlength="150" required=""><button class="secondary" type="submit">Find university</button></div></form>
-  <div id="university-matches" aria-live="polite"></div>
-  <form id="research-form">
-    <label>Official admissions-page URL <input id="research-url" type="url" placeholder="https://admissions.university.edu/…" maxlength="1000" required=""></label>
-    <p class="field-help">Supports .edu, .edu.country, .ac.country and MIT Admissions. For other domains, add requirements manually. A specific admissions page works better than a homepage.</p>
-    <div class="two"><label>Applicant type <select id="research-applicant"><option value="international">International applicant</option><option value="domestic">Domestic applicant</option></select></label><label>Entry type <select id="research-level"><option value="first-year">First-year undergraduate</option><option value="transfer">Undergraduate transfer</option></select></label></div>
-    <p class="field-help">Choose the university’s classification for you. Citizenship, residence and where you attended school can affect the rules.</p>
-    <button class="primary research-run" id="research-run" type="submit">Find requirements ↗</button>
-    <p class="field-help">Only the university URL and these two choices are sent for research. Your application notes and checklists stay on this device.</p>
+Recommendation"></textarea>
+    </label>
+
+    <small>
+      Use your college’s checklist. There are no universal document requirements.
+    </small>
+
+    <label>
+      Personal notes
+      <textarea name="notes" rows="3" maxlength="5000" placeholder="Questions, ideas, or anything to remember…"></textarea>
+    </label>
+
+    <div class="form-actions">
+      <button type="button" class="secondary close">Cancel</button>
+      <button class="primary" type="submit">Save college ↗</button>
+    </div>
   </form>
-  <div id="research-status" role="status" hidden=""></div>
-  <section id="research-results" hidden=""><h3>Review what we found</h3><p id="research-coverage" class="field-help"></p><div id="research-sources"></div><h4>Possible checklist items</h4><p class="field-help">Nothing is selected automatically. Read the source and its conditions before choosing an item.</p><div id="research-documents"></div><div id="research-other"></div><div id="research-warnings"></div><button class="primary" id="research-apply">Use selected items in college form</button><p class="field-help">This fills the editable form. Existing checklist items and completion states are preserved. Set the exact deadline and fee after checking the appropriate entry year and admission round.</p></section>
 </dialog>
 
-<script src="hosting.js"></script><script src="app.js"></script><script src="research.js"></script></body></html>
+<dialog id="confirm">
+  <h2>Remove this college?</h2>
+  <p>The application and its checklist will be removed from this device.</p>
+  <div class="form-actions">
+    <button class="secondary" id="cancel-delete">Keep college</button>
+    <button class="danger" id="confirm-delete">Remove college</button>
+  </div>
+</dialog>
+
+<dialog id="research-dialog" aria-labelledby="research-title">
+  <div class="dialog-head">
+    <div>
+      <span class="eyebrow">OFFICIAL-SOURCE RESEARCH</span>
+      <h2 id="research-title">Find university requirements</h2>
+    </div>
+    <button class="close" id="research-close" aria-label="Close research">×</button>
+  </div>
+
+  <p class="form-intro">
+    Start with a university name or its official admissions URL.
+    We scan public pages and show the evidence for you to review.
+  </p>
+
+  <form id="university-search">
+    <label for="university-query">University name</label>
+    <div class="research-search-row">
+      <input id="university-query"
+             placeholder="e.g. MIT, Harvard, or your university"
+             minlength="2"
+             maxlength="150"
+             required>
+      <button class="secondary" type="submit">Find university</button>
+    </div>
+  </form>
+
+  <div id="university-matches" aria-live="polite"></div>
+
+  <form id="research-form">
+    <label>
+      Official admissions-page URL
+      <input id="research-url"
+             type="url"
+             placeholder="https://admissions.university.edu/…"
+             maxlength="1000"
+             required>
+    </label>
+
+    <p class="field-help">
+      Supports .edu, .edu.country, .ac.country and MIT Admissions.
+      For other domains, add requirements manually.
+      A specific admissions page works better than a homepage.
+    </p>
+
+    <div class="two">
+      <label>
+        Applicant type
+        <select id="research-applicant">
+          <option value="international">International applicant</option>
+          <option value="domestic">Domestic applicant</option>
+        </select>
+      </label>
+      <label>
+        Entry type
+        <select id="research-level">
+          <option value="first-year">First-year undergraduate</option>
+          <option value="transfer">Undergraduate transfer</option>
+        </select>
+      </label>
+    </div>
+
+    <p class="field-help">
+      Choose the university’s classification for you.
+      Citizenship, residence and where you attended school can affect the rules.
+    </p>
+
+    <button class="primary research-run" id="research-run" type="submit">
+      Find requirements ↗
+    </button>
+
+    <p class="field-help">
+      Only the university URL and these two choices are sent for research.
+      Your application notes and checklists stay on this device.
+    </p>
+  </form>
+
+  <div id="research-status" role="status" hidden></div>
+
+  <section id="research-results" hidden>
+    <h3>Review what we found</h3>
+    <p id="research-coverage" class="field-help"></p>
+
+    <div id="research-sources"></div>
+
+    <h4>Possible checklist items</h4>
+    <p class="field-help">
+      Nothing is selected automatically.
+      Read the source and its conditions before choosing an item.
+    </p>
+
+    <div id="research-documents"></div>
+    <div id="research-other"></div>
+    <div id="research-warnings"></div>
+
+    <button class="primary" id="research-apply" type="button">
+      Use selected items in college form
+    </button>
+
+    <p class="field-help">
+      This fills the editable form with selected documents and available
+      fee, waiver and deadline research. Verify the admission round,
+      entry year and applicant eligibility before saving.
+    </p>
+  </section>
+</dialog>
+
+<script src="hosting.js"></script>
+<script src="app.js"></script>
+<script src="research.js"></script>
+<script src="research-autofill.js"></script>
+
+</body>
+</html>
