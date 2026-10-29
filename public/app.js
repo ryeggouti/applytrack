@@ -49,6 +49,7 @@ function today() { const d=new Date();return [d.getFullYear(),String(d.getMonth(
 function dateLabel(value) { return new Date(value+"T12:00:00").toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}); }
 function button(text,fn,cls="text-btn") { const b=node("button",cls,text);b.type="button";b.addEventListener("click",fn);return b; }
 function render() {
+  globalThis.renderWorkspaceViews?.(colleges);
   $("total").textContent=colleges.length;
   $("count").textContent=colleges.length;
   $("submitted").textContent=colleges.filter(c=>c.status==="Submitted").length;
