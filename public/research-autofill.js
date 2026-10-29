@@ -85,7 +85,7 @@
       const text=item.quote,context=(item.section||'')+' '+text;
       const host=new URL(item.url).hostname;
       const usd=/\.edu$/.test(host)||host==='mitadmissions.org'||/\bUSD\b|US dollars|U\.S\. dollars/i.test(context);
-      if(/fee waiver|waiv(?:e|er|ing).{0,40}fee/i.test(context))waiverEvidence.push(item);
+      if(/fee waivers?|waiv(?:e|er|ing).{0,40}fee|fee.{0,50}waiv/i.test(text)||(/fee waiver/i.test(item.section||'')&&/request|eligible|qualif|available|apply for free/i.test(text)))waiverEvidence.push(item);
       if(!usd||/tuition|deposit|international.{0,40}\$|domestic.{0,40}\$|\b(?:CAD|AUD|NZD|HKD|SGD)\b/i.test(context))continue;
       const before= /\$\s*(\d{1,3}(?:\.\d{2})?)\s*(?:non.refundable\s+)?(?:application\s+)?fee\b/gi;
       const after= /application fee\s*(?:of|is|:|costs)?\s*\$\s*(\d{1,3}(?:\.\d{2})?)(?![\d,.])/gi;
@@ -94,8 +94,21 @@
       for(const m of matches){amounts.push(+m[1]);feeEvidence.push(item);}
       if(!/\bif\b|\bfor\b|unless|eligible|qualif|waiv/i.test(text)&&/\bno application fee\b|application fee (?:is )?(?:not required|zero)/i.test(text)){amounts.push(0);feeEvidence.push(item);}
     }
-    // Availability is conditional evidence, never a determination of personal eligibility.
-    return {deadlines,conflicts,fee:unique(amounts).length===1?amounts[0]:null,feeEvidence,waiverEvidence};
+    // A university policy does not establish this applicant's personal eligibility.
+    let offered=false,restricted=false,substantive=false;
+    for(const item of waiverEvidence){
+      const text=item.quote;
+      if(text.endsWith('?'))continue;
+      const profile=report.profile?.applicant;
+      if(profile==='international'&&/domestic applicants only|(?:US|U\.S\.) citizens only/i.test(text))continue;
+      if(profile==='domestic'&&/international applicants only/i.test(text))continue;
+      const negative=/no (?:application )?fee waivers?|fee waivers? (?:are |is )?(?:not available|not offered|unavailable)|(?:do|does) not (?:offer|accept) (?:application )?fee waivers?|(?:cannot|can't|may not|not eligible to) request (?:a )?(?:application )?fee waiver/i.test(text);
+      const positive=!negative&&/request (?:an? )?(?:application )?fee waiver|request one|fee waivers? (?:are |is )?available|fee (?:will|can|may) be waived|apply for free if|fee waivers? (?:are )?offered/i.test(text);
+      if(negative||positive)substantive=true;
+      restricted||=negative;offered||=positive;
+    }
+    const waiverStatus=offered&&!restricted?'Available — check eligibility':substantive?'Review waiver policy':null;
+    return {deadlines,conflicts,fee:unique(amounts).length===1?amounts[0]:null,feeEvidence,waiverEvidence,waiverStatus};
   }
   function plan(report,cycle,round,{skipDeadline=false,existingDeadline=''}={}) {
     const result=extract(report,cycle);
@@ -110,8 +123,9 @@
   globalThis.ApplyTrackResearch={extract,plan};
   if(typeof document==='undefined')return;
   const form=document.getElementById('college-form');
-  let active=null,generated='';
-  form.addEventListener('reset',()=>{active=null;generated='';});
+  let active=null,generated='',waiverTouched=false;
+  form.addEventListener('reset',()=>{active=null;generated='';waiverTouched=false;});
+  form.elements.waiver.addEventListener('change',()=>{waiverTouched=true;});
   form.elements.deadline.addEventListener('input',()=>{generated='';active=null;});
   function fillDeadline(){
     if(!active)return;
@@ -125,6 +139,7 @@
   globalThis.applyResearchAutofill=(report,cycle,{skipDeadline=false}={})=>{
     const result=extract(report,cycle);result.notesOverflow=false;active=result;generated='';
     if(result.fee!==null&&form.elements.fee.value.trim()==='')form.elements.fee.value=String(result.fee);
+    if(result.waiverStatus && form.elements.waiver.value==='Unknown' && !waiverTouched)form.elements.waiver.value=result.waiverStatus;
     if(!skipDeadline)fillDeadline();
     else active=null;
     const entries=[

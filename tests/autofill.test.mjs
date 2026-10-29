@@ -98,3 +98,26 @@ test('the exact Harvard URL from the screenshot supplies both heading-based dead
  const result=extract(r,'2026');
  assert.deepEqual(result.deadlines.map(d=>[d.round,d.date]).sort(),[['Regular decision','2027-01-01'],['Restrictive early action','2026-11-01']]);
 });
+test('waiver availability is filled from affirmative official policies, never from mere mentions',()=>{
+ for(const q of ['Fee waivers are available for both domestic and international applicants.','$95 fee (or request a fee waiver)','If the application fee presents a hardship, the fee will be waived.','Yale does not issue its own fee waivers, but it is easy to apply for free if you meet the eligibility criteria.'])assert.equal(extract(report([],[q])).waiverStatus,'Available — check eligibility');
+ for(const q of ['Fee waivers','How can I request a fee waiver?','We link to application fee waiver information.'])assert.equal(extract(report([],[q])).waiverStatus,null);
+ assert.equal(extract(report([],['No fee waivers are available for international applicants.'])).waiverStatus,'Review waiver policy');
+ assert.equal(extract(report([],['Fee waivers are available.','No fee waivers are available for international applicants.'])).waiverStatus,'Review waiver policy');
+});
+test('Yale, Harvard and MIT official responses establish conditional availability',()=>{
+ for(const name of ['yale','harvard','mit']){
+  const r=JSON.parse(fs.readFileSync(new URL(`./fixtures/${name}-research.json`,import.meta.url),'utf8'));
+  assert.equal(extract(r).waiverStatus,'Available — check eligibility',name);
+ }
+});
+test('waiver autofill preserves personal statuses and manual choices and resets between drafts',()=>{
+ const {form,ctx,listeners}=formContext();
+ const r=report([],['Fee waivers are available for both domestic and international applicants.']);
+ for(const status of ['Approved','Requested','To request','Not needed']){
+  form.elements.waiver.value=status;ctx.applyResearchAutofill(r,'2026');assert.equal(form.elements.waiver.value,status);
+ }
+ form.elements.waiver.value='Unknown';ctx.applyResearchAutofill(r,'2026');assert.equal(form.elements.waiver.value,'Available — check eligibility');
+ form.elements.waiver.value='Unknown';form.elements.waiver.listeners.change();ctx.applyResearchAutofill(r,'2026');assert.equal(form.elements.waiver.value,'Unknown');
+ listeners.reset();ctx.applyResearchAutofill(r,'2026');assert.equal(form.elements.waiver.value,'Available — check eligibility');
+ assert.match(form.elements.notes.value,/Fee-waiver conditions/);
+});
