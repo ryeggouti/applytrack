@@ -135,7 +135,7 @@
       <article class="about-card"><span class="about-symbol" aria-hidden="true">◉</span><h2>Your list stays yours.</h2><p>Your college list is saved in this browser on this device. Export a backup to keep a copy or move it to another browser.</p><button type="button" class="secondary" id="about-export">Export my backup ↓</button></article>
       <article class="about-card"><span class="about-symbol" aria-hidden="true">↗</span><h2>A source for every suggestion.</h2><p>Research reads public university pages. Only the university URL and applicant choices are sent; your notes and checklists stay here. Review official dates and conditions before saving.</p><a href="#applications">Back to my applications ↗</a></article>
     </div>
-    <div class="about-steps"><h2>A few steps, a little less overwhelm.</h2><ol><li><strong>Build your list.</strong> Add a college or research its official requirements.</li><li><strong>Make it yours.</strong> Confirm the date, round, fee and documents you need.</li><li><strong>Keep moving.</strong> Check off documents, update your status and export a backup.</li></ol></div>
+    <div class="about-steps"><button type="button" class="secondary" id="replay-tour">Replay welcome tour ↗</button><h2>A few steps, a little less overwhelm.</h2><ol><li><strong>Build your list.</strong> Add a college or research its official requirements.</li><li><strong>Make it yours.</strong> Confirm the date, round, fee and documents you need.</li><li><strong>Keep moving.</strong> Check off documents, update your status and export a backup.</li></ol></div>
   </section>
 
   <footer>
@@ -374,11 +374,29 @@ Recommendation"></textarea>
   </section>
 </dialog>
 
+<dialog id="welcome-dialog" class="welcome-dialog" aria-labelledby="welcome-title" aria-describedby="welcome-description">
+  <div id="welcome-intro">
+    <div class="welcome-mark" aria-hidden="true">a<span>↗</span></div>
+    <div class="eyebrow">WELCOME TO APPLYTRACK</div>
+    <h2 id="welcome-title">Welcome!<br>Make room for what’s next.</h2>
+    <p id="welcome-description">Your colleges, deadlines, and documents finally have a place of their own. Let’s take a quick look around.</p>
+    <div class="welcome-actions"><button type="button" class="primary" id="start-tour">Show me around ↗</button><button type="button" class="text-btn" id="skip-welcome">I’ll explore myself</button></div>
+    <small>You can replay the tour any time in About ApplyTrack.</small>
+  </div>
+  <div id="welcome-step" hidden>
+    <div class="tour-topline"><span class="eyebrow" id="tour-progress"></span><button type="button" class="text-btn" id="skip-tour">Skip tour</button></div>
+    <h2 id="tour-title"></h2><p id="tour-description"></p>
+    <div class="tour-bottom"><div class="tour-dots" id="tour-dots" aria-hidden="true"></div><div class="welcome-actions"><button type="button" class="text-btn" id="tour-back">Back</button><button type="button" class="primary" id="tour-next">Next →</button></div></div>
+  </div>
+</dialog>
+<div id="return-greeting" class="return-greeting" role="status" hidden><span class="greeting-spark" aria-hidden="true">✦</span><div><strong id="return-greeting-title"></strong><p>A little progress, one next step at a time.</p></div><button type="button" id="dismiss-greeting" aria-label="Dismiss greeting">×</button></div>
+
 <script src="hosting.js"></script>
 <script src="app.js"></script>
 <script src="research.js"></script>
 <script src="research-autofill.js"></script>
 <script src="workspace.js"></script>
+<script src="welcome.js"></script>
 
 </body>
 </html>
