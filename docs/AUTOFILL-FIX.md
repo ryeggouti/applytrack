@@ -51,3 +51,9 @@ The reported Harvard URL `/admissions/apply` puts dates in headings and admissio
 The follow-up pairs date-only headings with the matching round text, including repeated mentions of the same round. A deadline review panel next to the transfer button displays the available rounds, resolved date and source link. Missing cycle years, unmatched rounds, unknown deadlines and conflicts keep research open with a specific explanation and focused input. A user may explicitly choose to continue without a deadline. Existing deadlines remain untouched. Year choice is retained for subsequent research during the same session.
 
 Validation: 44 automated tests pass. A browser test using the exact Harvard URL and live official pages confirmed the missing-year prompt, preview, populated January 1, 2027 deadline with $95 fee, and switching to restrictive early action changing the generated date to November 1, 2026. No test college was saved. The captured Harvard URL response is an additional regression fixture.
+
+## Fee-waiver field autofill (2026-10-29)
+
+Official affirmative waiver policies now fill an untouched Unknown field as Available — check eligibility. Explicit restrictions or conflicting policies produce Review waiver policy. Questions, navigation labels and vague mentions do not establish availability. Source excerpts and conditions remain in notes; research never marks personal eligibility, Requested or Approved. Existing status selections and manual Unknown choices are preserved. The manual-choice guard resets with each draft. Both new statuses are valid saved/backup values; old values remain supported.
+
+Validation: 47 tests pass, including affirmative and negative policy examples, Yale/Harvard/MIT source fixtures and preserving manually selected statuses.
