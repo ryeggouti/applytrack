@@ -1,10 +1,15 @@
 const KEY = "applytrack-v1";
 const $ = id => document.getElementById(id);
 let colleges = [], deleteId = null, storageReady = true;
+const expandedCollegeDetails = new Set();
 const statuses = ["Planning", "In progress", "Submitted"];
 const rounds = ["Regular decision", "Early action", "Early decision", "Early decision I", "Early decision II", "Restrictive early action", "QuestBridge", "Priority", "Rolling admission", "Other"];
 const waivers = ["Available — check eligibility", "Review waiver policy", "Unknown", "Not needed", "To request", "Requested", "Approved"];
-function announce(message) { $("notice").textContent = message; $("notice").hidden = false; }
+function announce(message) {
+  const notice=$("notice"),dismiss=button("×",()=>{notice.hidden=true;},"notice-dismiss");
+  dismiss.setAttribute("aria-label","Dismiss notification");
+  notice.replaceChildren(node("span","",message),dismiss);notice.hidden=false;
+}
 function validDate(value) {
   if (!value) return true;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -87,7 +92,15 @@ function render() {
       label.append(input,node("span","",d.name));checks.append(label);
     });
     if(!c.documents.length)checks.append(node("span","round","No documents added yet. Edit this college to add its requirements."));
-    card.append(checks);if(c.notes)card.append(node("div","notes",c.notes));
+    card.append(checks);
+    if(c.notes){
+      const details=node("details","college-details"),summary=node("summary","","See details & sources"),notes=node("div","notes",c.notes);
+      notes.tabIndex=0;notes.setAttribute("aria-label","Notes and research sources for "+c.name);
+      details.open=expandedCollegeDetails.has(c.id);
+      details.append(summary,notes);
+      details.addEventListener("toggle",()=>{if(details.isConnected){if(details.open)expandedCollegeDetails.add(c.id);else expandedCollegeDetails.delete(c.id);}});
+      card.append(details);
+    }
     const bottom=node("div","card-bottom"),site=node("span");
     if(c.website){const a=node("a","","Official website ↗");a.href=c.website;a.target="_blank";a.rel="noopener noreferrer";site.append(a);}
     const actions=node("div","actions");actions.append(button("Edit",()=>edit(c)),button("Remove",()=>{deleteId=c.id;$("confirm").showModal();}));
