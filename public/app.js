@@ -2,7 +2,7 @@ const KEY = "applytrack-v1";
 const $ = id => document.getElementById(id);
 let colleges = [], deleteId = null, storageReady = true;
 const statuses = ["Planning", "In progress", "Submitted"];
-const rounds = ["Regular decision", "Early action", "Early decision", "Rolling admission", "Other"];
+const rounds = ["Regular decision", "Early action", "Early decision", "Early decision I", "Early decision II", "Restrictive early action", "QuestBridge", "Priority", "Rolling admission", "Other"];
 const waivers = ["Unknown", "Not needed", "To request", "Requested", "Approved"];
 function announce(message) { $("notice").textContent = message; $("notice").hidden = false; }
 function validDate(value) {
