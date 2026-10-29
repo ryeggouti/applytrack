@@ -1,0 +1,233 @@
+{
+  "checkedAt": "2026-10-29T22:48:48.552Z",
+  "profile": {
+    "applicant": "international",
+    "level": "first-year"
+  },
+  "pages": [
+    {
+      "title": "Undergraduate Admissions",
+      "url": "https://admissions.yale.edu/"
+    },
+    {
+      "title": "Apply to Yale as a First-Year Student | Undergraduate Admissions",
+      "url": "https://admissions.yale.edu/apply"
+    },
+    {
+      "title": "Timelines | Undergraduate Admissions",
+      "url": "https://admissions.yale.edu/timelines"
+    },
+    {
+      "title": "Requirements | Undergraduate Admissions",
+      "url": "https://admissions.yale.edu/requirements"
+    },
+    {
+      "title": "International Students | Undergraduate Admissions",
+      "url": "https://admissions.yale.edu/international"
+    }
+  ],
+  "deadlines": [
+    {
+      "kind": "deadline",
+      "label": "Dates and deadlines",
+      "quote": "Application deadlines",
+      "url": "https://admissions.yale.edu/apply",
+      "title": "Apply to Yale as a First-Year Student | Undergraduate Admissions",
+      "section": "Application deadlines"
+    },
+    {
+      "kind": "deadline",
+      "label": "Dates and deadlines",
+      "quote": "Single-Choice Early Action (Deadline: November 1)",
+      "url": "https://admissions.yale.edu/apply",
+      "title": "Apply to Yale as a First-Year Student | Undergraduate Admissions",
+      "section": "Application deadlines"
+    },
+    {
+      "kind": "deadline",
+      "label": "Dates and deadlines",
+      "quote": "QuestBridge National College Match (Deadline: November 1)",
+      "url": "https://admissions.yale.edu/apply",
+      "title": "Apply to Yale as a First-Year Student | Undergraduate Admissions",
+      "section": "Application deadlines"
+    },
+    {
+      "kind": "deadline",
+      "label": "Dates and deadlines",
+      "quote": "Regular Decision (Deadline: January 2)",
+      "url": "https://admissions.yale.edu/apply",
+      "title": "Apply to Yale as a First-Year Student | Undergraduate Admissions",
+      "section": "Application deadlines"
+    },
+    {
+      "kind": "deadline",
+      "label": "Dates and deadlines",
+      "quote": "Application Deadline: November 1",
+      "url": "https://admissions.yale.edu/timelines",
+      "title": "Timelines | Undergraduate Admissions",
+      "section": "Select the timeline that is right for you"
+    },
+    {
+      "kind": "deadline",
+      "label": "Dates and deadlines",
+      "quote": "Decisions Released: Mid-December",
+      "url": "https://admissions.yale.edu/timelines",
+      "title": "Timelines | Undergraduate Admissions",
+      "section": "Select the timeline that is right for you"
+    },
+    {
+      "kind": "deadline",
+      "label": "Dates and deadlines",
+      "quote": "Admitted Student Reply Deadline: May 1",
+      "url": "https://admissions.yale.edu/timelines",
+      "title": "Timelines | Undergraduate Admissions",
+      "section": "Select the timeline that is right for you"
+    },
+    {
+      "kind": "deadline",
+      "label": "Dates and deadlines",
+      "quote": "Application Deadline: January 2",
+      "url": "https://admissions.yale.edu/timelines",
+      "title": "Timelines | Undergraduate Admissions",
+      "section": "Select the timeline that is right for you"
+    },
+    {
+      "kind": "deadline",
+      "label": "Dates and deadlines",
+      "quote": "Decisions Released: Late March",
+      "url": "https://admissions.yale.edu/timelines",
+      "title": "Timelines | Undergraduate Admissions",
+      "section": "Select the timeline that is right for you"
+    },
+    {
+      "kind": "deadline",
+      "label": "Dates and deadlines",
+      "quote": "Application Deadline Admissions Notification Admitted Student Reply Deadline",
+      "url": "https://admissions.yale.edu/timelines",
+      "title": "Timelines | Undergraduate Admissions",
+      "section": "Single-Choice Early Action"
+    },
+    {
+      "kind": "deadline",
+      "label": "Dates and deadlines",
+      "quote": "November 1 Mid-December May 1",
+      "url": "https://admissions.yale.edu/timelines",
+      "title": "Timelines | Undergraduate Admissions",
+      "section": "Single-Choice Early Action"
+    },
+    {
+      "kind": "deadline",
+      "label": "Dates and deadlines",
+      "quote": "Yale’s Single-Choice Early Action Program (also called Restrictive Early Action) is non-binding. If you are admitted through Early Action you may submit and maintain active applications at other colleges or universities.",
+      "url": "https://admissions.yale.edu/timelines",
+      "title": "Timelines | Undergraduate Admissions",
+      "section": "Single-Choice Early Action"
+    },
+    {
+      "kind": "deadline",
+      "label": "Dates and deadlines",
+      "quote": "If you opt to apply through Single-Choice Early Action at Yale, you may not also apply through Early Action or Early Decision to other colleges or universities, unless:",
+      "url": "https://admissions.yale.edu/timelines",
+      "title": "Timelines | Undergraduate Admissions",
+      "section": "Restrictions"
+    },
+    {
+      "kind": "deadline",
+      "label": "Dates and deadlines",
+      "quote": "The early admissions program is an Early Decision or Early Action program that notifies applicants after January 1. These programs are typically titled “Round 2”",
+      "url": "https://admissions.yale.edu/timelines",
+      "title": "Timelines | Undergraduate Admissions",
+      "section": "Restrictions"
+    },
+    {
+      "kind": "deadline",
+      "label": "Dates and deadlines",
+      "quote": "Early Action applicants will receive one of three admissions decisions in mid-December:",
+      "url": "https://admissions.yale.edu/timelines",
+      "title": "Timelines | Undergraduate Admissions",
+      "section": "Possible outcomes"
+    },
+    {
+      "kind": "deadline",
+      "label": "Dates and deadlines",
+      "quote": "The admissions committee reconsiders all deferred applications along with Regular Decision applicants and releases final decisions by late March. Applicants denied admission under Single-Choice Early Action are not eligible to reapply through Regular Decision during the same admissions cycle.",
+      "url": "https://admissions.yale.edu/timelines",
+      "title": "Timelines | Undergraduate Admissions",
+      "section": "Possible outcomes"
+    },
+    {
+      "kind": "deadline",
+      "label": "Dates and deadlines",
+      "quote": "Late March (Regular Decision)",
+      "url": "https://admissions.yale.edu/timelines",
+      "title": "Timelines | Undergraduate Admissions",
+      "section": "QuestBridge National College Match"
+    },
+    {
+      "kind": "deadline",
+      "label": "Dates and deadlines",
+      "quote": "If you do not match, your QuestBridge application will be automatically moved to Yale’s Regular Decision round, and you will receive a a final admissions decision in late March.",
+      "url": "https://admissions.yale.edu/timelines",
+      "title": "Timelines | Undergraduate Admissions",
+      "section": "Possible outcomes"
+    },
+    {
+      "kind": "deadline",
+      "label": "Dates and deadlines",
+      "quote": "Unlike Early Action, the QuestBridge National College Match is a binding admission program. Matching students may matriculate at Yale in the coming fall term or may request to postpone their matriculation for one year.",
+      "url": "https://admissions.yale.edu/timelines",
+      "title": "Timelines | Undergraduate Admissions",
+      "section": "The Questbridge Match is binding"
+    },
+    {
+      "kind": "deadline",
+      "label": "Dates and deadlines",
+      "quote": "January 2 Late March May 1",
+      "url": "https://admissions.yale.edu/timelines",
+      "title": "Timelines | Undergraduate Admissions",
+      "section": "Regular Decision"
+    },
+    {
+      "kind": "deadline",
+      "label": "Dates and deadlines",
+      "quote": "Regular Decision applicants will receive one of three admissions decisions in late March:",
+      "url": "https://admissions.yale.edu/timelines",
+      "title": "Timelines | Undergraduate Admissions",
+      "section": "Possible outcomes"
+    },
+    {
+      "kind": "deadline",
+      "label": "Dates and deadlines",
+      "quote": "Applicants who are admitted through the Regular Decision round have until May 1 to reply to Yale’s offer of admission. Applicants who are offered to remain on Yale’s wait list may respond by May 1.",
+      "url": "https://admissions.yale.edu/timelines",
+      "title": "Timelines | Undergraduate Admissions",
+      "section": "Possible outcomes"
+    }
+  ],
+  "fees": [
+    {
+      "kind": "fee",
+      "label": "Fees and waivers",
+      "quote": "Fee waivers",
+      "url": "https://admissions.yale.edu/requirements",
+      "title": "Requirements | Undergraduate Admissions",
+      "section": "Fee waivers"
+    },
+    {
+      "kind": "fee",
+      "label": "Fees and waivers",
+      "quote": "Yale does not issue its own fee waivers, but it is easy to apply for free if you meet any of the eligibility criteria for your chosen application platform. Follow the instructions when completing the Common App or Coalition Application on SCOIR. The QuestBridge Application is always free.",
+      "url": "https://admissions.yale.edu/requirements",
+      "title": "Requirements | Undergraduate Admissions",
+      "section": "Fee waivers"
+    },
+    {
+      "kind": "fee",
+      "label": "Fees and waivers",
+      "quote": "U.S. military veterans and active-duty service members receive automatic application fee waivers.",
+      "url": "https://admissions.yale.edu/requirements",
+      "title": "Requirements | Undergraduate Admissions",
+      "section": "Fee waivers"
+    }
+  ]
+}

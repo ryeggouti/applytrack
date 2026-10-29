@@ -137,6 +137,7 @@ $("research-apply").addEventListener("click",()=>{
     "Review the original source for conditions, entry year and admission round. Suggestions are not a verified checklist."].join("\n");
   const combined=[form.elements.notes.value.trim(),reference].filter(Boolean).join("\n\n");
   if(combined.length<=5000)form.elements.notes.value=combined;
+  const filled=globalThis.applyResearchAutofill?.(report,$("research-cycle").value);
   researchDialog.close();form.elements.documents.focus();
-  announce("Research suggestions added to the college form. Review all fields, then save. No deadline or fee was guessed.");
+  announce("Research added to the editable form. "+(filled?.fee===null?"Fee not established. ":"")+(filled?.deadlines.some(d=>!d.date)?"Choose an application cycle to fill yearless dates. ":"")+(filled?.notesOverflow?"Evidence could not fit in notes; reopen research to review sources. ":"Round dates and waiver conditions are in notes. ")+"Review, then save.");
 });
