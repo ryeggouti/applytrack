@@ -86,6 +86,18 @@ function evidenceCard(item,selectable,index){
   }
   return card;
 }
+function deadlinePlan(){
+  const existing=$('editor').open?$('college-form').elements.deadline.value:'';
+  return ApplyTrackResearch.plan(researchReport,$('research-cycle').value,$('research-round').value,{skipDeadline:$('research-skip-deadline').checked,existingDeadline:existing});
+}
+function previewResearchDeadline(){
+  if(!researchReport)return;
+  const plan=deadlinePlan();
+  $('research-deadline-preview').textContent=plan.message;
+  const source=$('research-deadline-source');source.replaceChildren();
+  if(plan.match)source.append(sourceLink(plan.match.url,'Official deadline source ↗'));
+}
+for(const id of ['research-cycle','research-round','research-skip-deadline'])$(id).addEventListener('input',previewResearchDeadline);
 function renderResearch(data){
   $("research-results").hidden=false;
   $("research-coverage").textContent=data.coverage+" Checked "+new Date(data.checkedAt).toLocaleString()+". Profile: "+data.profile.applicant+", "+data.profile.level+".";
@@ -119,12 +131,28 @@ function renderResearch(data){
   }
   const warnings=$("research-warnings");warnings.replaceChildren();
   for(const warning of data.warnings)warnings.append(node("p","field-help","Some pages were not inspected: "+warning));
+  const extracted=ApplyTrackResearch.extract(data,$('research-cycle').value);
+  const choices=$('research-round');choices.replaceChildren();
+  const placeholder=node('option','','Choose a round');placeholder.value='';choices.append(placeholder);
+  for(const d of extracted.deadlines){const option=node('option','',d.round);option.value=d.round;choices.append(option);}
+  const current=$('editor').open?$('college-form').elements.round.value:'Regular decision';
+  choices.value=extracted.deadlines.some(d=>d.round===current)?current:'';
+  $('research-skip-deadline').checked=false;
+  previewResearchDeadline();
   $("research-apply").disabled=!data.pages.length;
 }
 $("research-apply").addEventListener("click",()=>{
   if(!researchReport)return;
   const selected=[...$("research-documents").querySelectorAll("input[data-research-index]:checked")].map(input=>researchReport.documents[Number(input.dataset.researchIndex)]);
   const wasEditing=$("editor").open,form=$("college-form");
+  // Resolve missing round/year before opening or changing the college draft.
+  if(wasEditing && form.elements.id.value!==researchTargetId){researchStatus('The college form changed. Close research and reopen it for that college.',true);return;}
+  const plan=deadlinePlan();
+  if(!plan.ready){
+    researchStatus(plan.message,true);
+    $(plan.reason==='cycle'?'research-cycle':plan.reason==='round'?'research-round':'research-skip-deadline').focus();
+    return;
+  }
   // If launched from the list, create a new draft rather than replace any saved college.
   if(!wasEditing){edit();form.elements.name.value=$("university-query").value.trim();form.elements.website.value=$("research-url").value.trim();}
   else if(form.elements.id.value!==researchTargetId){researchStatus("The college form changed. Close research and reopen it for that college.",true);return;}
@@ -137,7 +165,8 @@ $("research-apply").addEventListener("click",()=>{
     "Review the original source for conditions, entry year and admission round. Suggestions are not a verified checklist."].join("\n");
   const combined=[form.elements.notes.value.trim(),reference].filter(Boolean).join("\n\n");
   if(combined.length<=5000)form.elements.notes.value=combined;
-  const filled=globalThis.applyResearchAutofill?.(report,$("research-cycle").value);
+  if(plan.reason==='dated')form.elements.round.value=$('research-round').value;
+  const filled=globalThis.applyResearchAutofill?.(report,$('research-cycle').value,{skipDeadline:plan.reason==='skipped'});
   researchDialog.close();form.elements.documents.focus();
-  announce("Research added to the editable form. "+(filled?.fee===null?"Fee not established. ":"")+(filled?.deadlines.some(d=>!d.date)?"Choose an application cycle to fill yearless dates. ":"")+(filled?.notesOverflow?"Evidence could not fit in notes; reopen research to review sources. ":"Round dates and waiver conditions are in notes. ")+"Review, then save.");
+  announce("Research added to the editable form. "+(filled?.fee===null?"Fee not established. ":"")+plan.message+" "+(filled?.notesOverflow?"Evidence could not fit in notes; reopen research to review sources. ":"Round dates and waiver conditions are in notes. ")+"Review, then save.");
 });

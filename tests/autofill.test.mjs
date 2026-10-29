@@ -77,3 +77,24 @@ test('date ranges and ambiguous multi-date excerpts are not assigned a single da
  assert.equal(extract(report(['Early Action deadline: November 1–15, 2026'])).deadlines.length,0);
  assert.equal(extract(report(['Early Action deadline: November 1, 2026 or November 15, 2026'])).deadlines.length,0);
 });
+test('date headings pair with their own admission round text',()=>{
+ const r={pages:[{url}],fees:[],deadlines:[{url,section:'January 1',quote:'Regular Decision application deadline'},{url,section:'November 1',quote:'Restrictive Early Action application deadline - learn more about Restrictive Early Action.'}]};
+ // Repeated mentions of the same round do not make the heading ambiguous.
+ const result=extract(r,'2026');
+ assert.deepEqual(result.deadlines.map(d=>d.date),['2027-01-01','2026-11-01']);
+});
+test('transfer plan requires a cycle, keeps existing deadlines and supports explicit skip',()=>{
+ const r=report(['Regular Decision deadline: January 2']);
+ assert.equal(context.ApplyTrackResearch.plan(r,'','Regular decision').reason,'cycle');
+ assert.equal(context.ApplyTrackResearch.plan(r,'','Regular decision').ready,false);
+ assert.equal(context.ApplyTrackResearch.plan(r,'2026','Regular decision').match.date,'2027-01-02');
+ assert.equal(context.ApplyTrackResearch.plan(r,'2026','Early decision').reason,'round');
+ assert.equal(context.ApplyTrackResearch.plan(r,'','Regular decision',{skipDeadline:true}).reason,'skipped');
+ assert.equal(context.ApplyTrackResearch.plan(r,'','Regular decision',{existingDeadline:'2028-01-05'}).reason,'preserved');
+ assert.equal(context.ApplyTrackResearch.plan(report(),'2026','Regular decision').reason,'unknown');
+});
+test('the exact Harvard URL from the screenshot supplies both heading-based deadlines',()=>{
+ const r=JSON.parse(fs.readFileSync(new URL('./fixtures/harvard-apply-research.json',import.meta.url),'utf8'));
+ const result=extract(r,'2026');
+ assert.deepEqual(result.deadlines.map(d=>[d.round,d.date]).sort(),[['Regular decision','2027-01-01'],['Restrictive early action','2026-11-01']]);
+});
