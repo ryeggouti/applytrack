@@ -43,3 +43,11 @@ Run `pnpm install --frozen-lockfile`, `node --test`, `node --check public/resear
 Tests cover Yale/Harvard/MIT captured official responses, all extracted rounds, ED I/II, explicit cycle requirements, invalid/conflicting dates, multi-round pairing, fee-order variants, currency/conflict rejection, waiver negation retention, short heading evidence and form preservation. Form tests execute the extension in a simulated DOM; no manual browser end-to-end session was performed.
 
 Deploy the same revision to BOTH the Pages frontend and the Node research service. The Pages build now fingerprints research-autofill.js too. A GitHub Pages push does not deploy the API service. No production deployment or remote push was performed by this work.
+
+## Follow-up: silent empty deadlines (2026-10-29)
+
+The reported Harvard URL `/admissions/apply` puts dates in headings and admission-round names in the following paragraph. The original correction still required the date in the quote. It also silently transferred a blank deadline when the optional cycle year was absent.
+
+The follow-up pairs date-only headings with the matching round text, including repeated mentions of the same round. A deadline review panel next to the transfer button displays the available rounds, resolved date and source link. Missing cycle years, unmatched rounds, unknown deadlines and conflicts keep research open with a specific explanation and focused input. A user may explicitly choose to continue without a deadline. Existing deadlines remain untouched. Year choice is retained for subsequent research during the same session.
+
+Validation: 44 automated tests pass. A browser test using the exact Harvard URL and live official pages confirmed the missing-year prompt, preview, populated January 1, 2027 deadline with $95 fee, and switching to restrictive early action changing the generated date to November 1, 2026. No test college was saved. The captured Harvard URL response is an additional regression fixture.

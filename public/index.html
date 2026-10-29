@@ -281,11 +281,6 @@ Recommendation"></textarea>
       Citizenship, residence and where you attended school can affect the rules.
     </p>
 
-    <label>Application cycle start year (optional)
-      <input id="research-cycle" type="number" min="2000" max="2099" placeholder="e.g. 2026">
-    </label>
-    <p class="field-help">Only for a July–June application cycle: 2026 means July 2026 through June 2027. Yearless official deadlines use this choice. Leave blank if your cycle is different or uncertain.</p>
-
     <button class="primary research-run" id="research-run" type="submit">
       Find requirements ↗
     </button>
@@ -313,6 +308,20 @@ Recommendation"></textarea>
     <div id="research-documents"></div>
     <div id="research-other"></div>
     <div id="research-warnings"></div>
+
+    <section class="evidence" aria-labelledby="research-deadline-title">
+      <h4 id="research-deadline-title">Deadline to add to your college form</h4>
+      <label>Admission round
+        <select id="research-round"><option value="">Choose a round</option></select>
+      </label>
+      <label>Application cycle start year
+        <input id="research-cycle" type="number" min="2000" max="2099" placeholder="e.g. 2026" aria-describedby="research-cycle-help">
+      </label>
+      <p id="research-cycle-help" class="field-help">For a July–June application cycle, enter 2026 for July 2026 through June 2027 (usually fall 2027 entry). Only you choose the cycle; the source supplies the month and day.</p>
+      <p id="research-deadline-preview" role="status"></p>
+      <div id="research-deadline-source"></div>
+      <label class="evidence-choice"><input id="research-skip-deadline" type="checkbox"> Continue without filling a deadline</label>
+    </section>
 
     <button class="primary" id="research-apply" type="button">
       Use selected items in college form

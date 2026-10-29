@@ -33,7 +33,7 @@
       const iso = year ? `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}` : null;
       const check = new Date(`${year||2000}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}T12:00:00Z`);
       if (isNaN(check)||check.getUTCMonth()+1!==month||check.getUTCDate()!==day) return [];
-      return [{index:m.index,end:m.index+m[0].length,date:iso,label:m[0],basis:explicitYear?'Source year':cycle?`User-selected July ${cycle}–June ${+cycle+1} cycle`:'Year not established'}];
+      return [{index:m.index,end:m.index+m[0].length,month,day,date:iso,label:m[0],basis:explicitYear?'Source year':cycle?`User-selected July ${cycle}–June ${+cycle+1} cycle`:'Year not established'}];
     });
   }
   function extract(report, cycle='') {
@@ -47,7 +47,14 @@
         if (/financial aid|test(?:ing)?|scores|notification|decisions? (?:are |will be )?released|reply|enrollment|deposit/i.test(clause)) continue;
         if (!/deadline|due|apply by|applications? (?:must|should|are to) be (?:submitted|received)/i.test(clause+' '+item.section)) continue;
         if (/\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{1,2}\s*(?:[-–—]|to)\s*\d{1,2}/i.test(clause)) continue;
-        const mentions=roundMentions(clause), ds=dates(clause,cycle);
+        const mentions=roundMentions(clause);
+        let ds=dates(clause,cycle);
+        // Harvard and many other sites put the date in the heading above the round.
+        // Use a date-only heading; never mix arbitrary heading dates into a quote.
+        if(!ds.length && unique(mentions.map(r=>r.round)).length===1){
+          const headingDates=dates(item.section||'',cycle);
+          if(headingDates.length===1 && (item.section||'').trim()===headingDates[0].label) ds=headingDates;
+        }
         if (mentions.length===0) {
           const rs=unique(roundMentions(item.section||'').map(x=>x.round));
           if(rs.length===1&&ds.length===1)candidates.push({...ds[0],round:rs[0],url:item.url,quote:item.quote});
@@ -70,7 +77,7 @@
     const deadlines=[],conflicts=[];
     for(const round of unique(candidates.map(x=>x.round))) {
       const values=candidates.filter(x=>x.round===round);
-      if(unique(values.map(x=>x.date||x.label.toLowerCase())).length===1)deadlines.push(values[0]);
+      if(unique(values.map(x=>x.date||x.month+'-'+x.day)).length===1)deadlines.push(values[0]);
       else conflicts.push(round);
     }
     const amounts=[],feeEvidence=[],waiverEvidence=[];
@@ -90,7 +97,17 @@
     // Availability is conditional evidence, never a determination of personal eligibility.
     return {deadlines,conflicts,fee:unique(amounts).length===1?amounts[0]:null,feeEvidence,waiverEvidence};
   }
-  globalThis.ApplyTrackResearch={extract};
+  function plan(report,cycle,round,{skipDeadline=false,existingDeadline=''}={}) {
+    const result=extract(report,cycle);
+    const match=result.deadlines.find(d=>d.round===round);
+    if(existingDeadline)return {ready:true,reason:'preserved',message:'Your existing deadline will be kept.',result,match};
+    if(skipDeadline)return {ready:true,reason:'skipped',message:'Deadline will be left for you to enter.',result,match};
+    if(!result.deadlines.length)return {ready:false,reason:'unknown',message:result.conflicts.length?'Official dates conflict. Review the sources or choose to continue without a deadline.':'No application deadline was established. Try a specific official deadline page, or choose to continue without a deadline.',result};
+    if(!match)return {ready:false,reason:'round',message:'Choose one of the admission rounds found on the official pages.',result};
+    if(!match.date)return {ready:false,reason:'cycle',message:match.round+': '+match.label+'. The source omits the year. Enter your application-cycle start year to complete the date.',result,match};
+    return {ready:true,reason:'dated',message:match.round+': '+match.date+' will fill the college form.',result,match};
+  }
+  globalThis.ApplyTrackResearch={extract,plan};
   if(typeof document==='undefined')return;
   const form=document.getElementById('college-form');
   let active=null,generated='';
@@ -105,10 +122,11 @@
     }
   }
   form.elements.round.addEventListener('change',fillDeadline);
-  globalThis.applyResearchAutofill=(report,cycle)=>{
+  globalThis.applyResearchAutofill=(report,cycle,{skipDeadline=false}={})=>{
     const result=extract(report,cycle);result.notesOverflow=false;active=result;generated='';
     if(result.fee!==null&&form.elements.fee.value.trim()==='')form.elements.fee.value=String(result.fee);
-    fillDeadline();
+    if(!skipDeadline)fillDeadline();
+    else active=null;
     const entries=[
       ...result.deadlines.map(d=>`${d.round}: ${d.date||d.label} (${d.basis}) — ${d.url}`),
       ...result.conflicts.map(r=>`${r}: conflicting dates; check sources`),
