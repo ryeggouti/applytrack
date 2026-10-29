@@ -3,7 +3,7 @@ const $ = id => document.getElementById(id);
 let colleges = [], deleteId = null, storageReady = true;
 const statuses = ["Planning", "In progress", "Submitted"];
 const rounds = ["Regular decision", "Early action", "Early decision", "Rolling admission", "Other"];
-const waivers = ["Not needed", "To request", "Requested", "Approved"];
+const waivers = ["Unknown", "Not needed", "To request", "Requested", "Approved"];
 function announce(message) { $("notice").textContent = message; $("notice").hidden = false; }
 function validDate(value) {
   if (!value) return true;
