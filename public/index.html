@@ -7,6 +7,7 @@
   <meta name="description" content="Your college applications, one clear next step at a time.">
   <title>ApplyTrack — Your next chapter</title>
   <link rel="icon" type="image/svg+xml" sizes="any" href="favicon.svg">
+  <script>document.documentElement.classList.add('arrival-pending');window.applytrackIntroFallback=setTimeout(()=>document.documentElement.classList.remove('arrival-pending'),6000);</script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -135,6 +136,7 @@
       <article class="about-card"><span class="about-symbol" aria-hidden="true">◉</span><h2>Your list stays yours.</h2><p>Your college list is saved in this browser on this device. Export a backup to keep a copy or move it to another browser.</p><button type="button" class="secondary" id="about-export">Export my backup ↓</button></article>
       <article class="about-card"><span class="about-symbol" aria-hidden="true">↗</span><h2>A source for every suggestion.</h2><p>Research reads public university pages. Only the university URL and applicant choices are sent; your notes and checklists stay here. Review official dates and conditions before saving.</p><a href="#applications">Back to my applications ↗</a></article>
     </div>
+    <section class="profile-card" aria-labelledby="profile-heading"><div><span class="eyebrow">YOUR WORKSPACE, YOUR WAY</span><h2 id="profile-heading">Your profile</h2><p id="profile-summary">Add a preferred name and application choices to personalize your workspace.</p></div><button type="button" class="secondary" id="edit-profile">Set up my profile</button></section>
     <div class="about-steps"><button type="button" class="secondary" id="replay-tour">Replay welcome tour ↗</button><h2>A few steps, a little less overwhelm.</h2><ol><li><strong>Build your list.</strong> Add a college or research its official requirements.</li><li><strong>Make it yours.</strong> Confirm the date, round, fee and documents you need.</li><li><strong>Keep moving.</strong> Check off documents, update your status and export a backup.</li></ol></div>
   </section>
 
@@ -374,13 +376,26 @@ Recommendation"></textarea>
   </section>
 </dialog>
 
+<dialog id="profile-dialog" class="profile-dialog" aria-labelledby="profile-title">
+  <form id="profile-form">
+    <div class="dialog-head"><div><div class="eyebrow">MAKE YOURSELF AT HOME</div><h2 id="profile-title">A little about you.</h2></div><button type="button" id="profile-close" class="close" aria-label="Close profile">×</button></div>
+    <p class="form-intro">Everything here is optional. Your name personalizes greetings, and your application choices prefill research so you don’t have to repeat them.</p>
+    <label>What should we call you?<input name="preferredName" maxlength="50" autocomplete="given-name" placeholder="e.g. Rayane"></label>
+    <div class="two"><label>Applicant type<select name="applicant"><option value="">Choose later</option><option value="international">International applicant</option><option value="domestic">Domestic applicant</option></select></label><label>Entry type<select name="level"><option value="">Choose later</option><option value="first-year">First-year undergraduate</option><option value="transfer">Undergraduate transfer</option></select></label></div>
+    <label>Application cycle start year<input name="cycle" type="number" min="2000" max="2099" placeholder="e.g. 2026"></label>
+    <p class="field-help">2026 means July 2026 through June 2027, usually for fall 2027 entry. Confirm each college’s calendar and how it classifies you.</p>
+    <p class="profile-privacy">◉ No account needed. Your profile stays in this browser. Your preferred name is never sent for research. Application choices are sent only when you run a lookup.</p>
+    <p id="profile-save-status" class="field-help" role="status" hidden></p>
+    <div class="form-actions"><button type="button" id="profile-skip" class="text-btn">Skip for now</button><button type="submit" class="primary">Save profile →</button></div>
+  </form>
+</dialog>
 <dialog id="welcome-dialog" class="welcome-dialog" aria-labelledby="welcome-title" aria-describedby="welcome-description">
   <div id="welcome-intro">
     <div class="welcome-mark" aria-hidden="true">a<span>↗</span></div>
     <div class="eyebrow">WELCOME TO APPLYTRACK</div>
     <h2 id="welcome-title">Welcome!<br>Make room for what’s next.</h2>
     <p id="welcome-description">Your colleges, deadlines, and documents finally have a place of their own. Let’s take a quick look around.</p>
-    <div class="welcome-actions"><button type="button" class="primary" id="start-tour">Show me around ↗</button><button type="button" class="text-btn" id="skip-welcome">I’ll explore myself</button></div>
+    <div class="welcome-actions"><button type="button" class="primary" id="start-tour">Let’s get started ↗</button><button type="button" class="text-btn" id="skip-welcome">I’ll explore myself</button></div>
     <small>You can replay the tour any time in About ApplyTrack.</small>
   </div>
   <div id="welcome-step" hidden>
@@ -389,13 +404,14 @@ Recommendation"></textarea>
     <div class="tour-bottom"><div class="tour-dots" id="tour-dots" aria-hidden="true"></div><div class="welcome-actions"><button type="button" class="text-btn" id="tour-back">Back</button><button type="button" class="primary" id="tour-next">Next →</button></div></div>
   </div>
 </dialog>
-<div id="return-greeting" class="return-greeting" role="status" hidden><span class="greeting-spark" aria-hidden="true">✦</span><div><strong id="return-greeting-title"></strong><p>A little progress, one next step at a time.</p></div><button type="button" id="dismiss-greeting" aria-label="Dismiss greeting">×</button></div>
+<dialog id="arrival-dialog" class="arrival-dialog" aria-labelledby="arrival-title"><div class="arrival-center"><div class="arrival-spark" aria-hidden="true">✦</div><h1 id="arrival-title"></h1><button type="button" id="arrival-continue">Continue →</button></div></dialog>
 
 <script src="hosting.js"></script>
 <script src="app.js"></script>
 <script src="research.js"></script>
 <script src="research-autofill.js"></script>
 <script src="workspace.js"></script>
+<script src="profile.js"></script>
 <script src="welcome.js"></script>
 
 </body>
