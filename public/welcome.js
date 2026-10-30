@@ -86,13 +86,12 @@
     };
     if(reduced)done();else{arrival.classList.add('is-leaving');setTimeout(done,360);}
   }
-  get('arrival-continue').addEventListener('click',completeArrival);
   arrival.addEventListener('cancel',event=>{event.preventDefault();completeArrival();});
   if(!state.seen)openWelcome();
   else{
     const choice=nextGreeting(state.lastGreeting);remember({lastGreeting:choice});
     get('arrival-title').textContent=formatGreeting(greetings[choice],globalThis.ApplyTrackProfile?.read?.()?.preferredName||'');
-    arriving=true;arrival.showModal();get('arrival-continue').focus({preventScroll:true});
-    timer=setTimeout(completeArrival,reduced?1000:3000);
+    arriving=true;arrival.showModal();get('arrival-title').focus({preventScroll:true});
+    timer=setTimeout(completeArrival,reduced?1000:2400);
   }
 })();
