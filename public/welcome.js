@@ -2,7 +2,8 @@
 (() => {
   'use strict';
   const KEY='applytrack-welcome-v1';
-  const greetings=['Welcome back!','Good to have you back!','Nice to see you again!','Welcome home!'];
+  const greetings=['Welcome back{name}!','Good to have you back{name}.','Nice to see you again{name}.','Welcome home{name}.','Hey{name}. Let’s pick up where you left off.','Your next chapter awaits{name}.','Ready for the next step{name}?','One step closer{name}.','Glad you’re here{name}.','Back for what’s next{name}?','Let’s make a little progress{name}.','Your plans have a place here{name}.','Come on in{name}.','Good things take small steps{name}.','Here’s to your next chapter{name}.','Let’s keep moving{name}.','Make yourself at home{name}.','A fresh start for your plans{name}.','There you are{name}.','Let’s find your next step{name}.'];
+  function formatGreeting(template,name=''){const clean=String(name).replace(/\s+/g,' ').trim().slice(0,50);return template.replace('{name}',clean?', '+clean:'');}
   const steps=[
     {view:'applications',target:'#add',title:'Start with a college.',text:'Add a college to your list. Keep its admission round, deadline, fee and document checklist together in one editable card.'},
     {view:'applications',target:'#research-launch',title:'Let the official pages help.',text:'Research a university to find sourced suggestions. Review the documents, choose your application cycle, and check the proposed deadline before saving.'},
@@ -14,11 +15,12 @@
     const choices=greetings.map((_,i)=>i).filter(i=>i!==last);
     return choices[Math.min(choices.length-1,Math.floor(Math.max(0,random)*choices.length))];
   }
-  globalThis.ApplyTrackWelcome={nextGreeting,greetings};
+  globalThis.ApplyTrackWelcome={nextGreeting,greetings,formatGreeting};
   if(typeof document==='undefined')return;
   const dialog=document.getElementById('welcome-dialog');
   if(!dialog)return;
   const get=id=>document.getElementById(id);
+  function releasePage(){clearTimeout(window.applytrackIntroFallback);document.documentElement.classList.remove('arrival-pending');}
   const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   let state={},store=null,index=-1,target=null,returnHash='',returnFocus=null,timer=null;
   for(const candidate of ['localStorage','sessionStorage']){
@@ -59,24 +61,38 @@
   }
   function openWelcome(){
     if(dialog.open||document.querySelector('dialog[open]'))return;
-    get('return-greeting').hidden=true;clearTimeout(timer);
+    releasePage();clearTimeout(timer);
     returnHash=location.hash;returnFocus=document.activeElement;index=-1;
     dialog.classList.remove('tour-guided','tour-at-top');get('welcome-intro').hidden=false;get('welcome-step').hidden=true;
     dialog.setAttribute('aria-labelledby','welcome-title');dialog.setAttribute('aria-describedby','welcome-description');
     dialog.showModal();get('start-tour').focus({preventScroll:true});
   }
-  get('start-tour').addEventListener('click',()=>{index=0;renderStep();});
+  get('start-tour').addEventListener('click',()=>{
+    const start=()=>{if(!dialog.open)dialog.showModal();index=0;renderStep();};
+    if(globalThis.ApplyTrackProfile?.open){dialog.close();ApplyTrackProfile.open({onDone:start});}else start();
+  });
   get('tour-next').addEventListener('click',()=>{if(index===steps.length-1)finish(true);else{index++;renderStep();}});
   get('tour-back').addEventListener('click',()=>{if(index>0){index--;renderStep();}});
   get('skip-welcome').addEventListener('click',()=>finish(false));
   get('skip-tour').addEventListener('click',()=>finish(false));
   dialog.addEventListener('cancel',event=>{event.preventDefault();finish(false);});
   get('replay-tour').addEventListener('click',openWelcome);
-  get('dismiss-greeting').addEventListener('click',()=>{get('return-greeting').hidden=true;clearTimeout(timer);});
+  const arrival=get('arrival-dialog');
+  let arriving=false;
+  function completeArrival(){
+    if(!arriving)return;arriving=false;clearTimeout(timer);
+    const done=()=>{arrival.close();arrival.classList.remove('is-leaving');releasePage();reveal();
+      if(globalThis.ApplyTrackProfile?.needsSetup?.())ApplyTrackProfile.open();
+    };
+    if(reduced)done();else{arrival.classList.add('is-leaving');setTimeout(done,360);}
+  }
+  get('arrival-continue').addEventListener('click',completeArrival);
+  arrival.addEventListener('cancel',event=>{event.preventDefault();completeArrival();});
   if(!state.seen)openWelcome();
   else{
-    reveal();const choice=nextGreeting(state.lastGreeting);remember({lastGreeting:choice});
-    get('return-greeting-title').textContent=greetings[choice];get('return-greeting').hidden=false;
-    timer=setTimeout(()=>{get('return-greeting').hidden=true;},5000);
+    const choice=nextGreeting(state.lastGreeting);remember({lastGreeting:choice});
+    get('arrival-title').textContent=formatGreeting(greetings[choice],globalThis.ApplyTrackProfile?.read?.()?.preferredName||'');
+    arriving=true;arrival.showModal();get('arrival-continue').focus({preventScroll:true});
+    timer=setTimeout(completeArrival,reduced?1000:3000);
   }
 })();

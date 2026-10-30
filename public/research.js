@@ -17,6 +17,7 @@ function stopLookup(){lookupSequence++;lookupController?.abort();lookupControlle
 function clearReport(){researchReport=null;$("research-results").hidden=true;$("research-documents").replaceChildren();}
 function openResearch(fromEditor=false){
   stopLookup();clearReport();$("research-status").hidden=true;
+  globalThis.ApplyTrackProfile?.applyResearchDefaults?.();
   researchTargetId=fromEditor?$("college-form").elements.id.value:null;
   const form=$("college-form");
   $("university-query").value=fromEditor?form.elements.name.value:"";
