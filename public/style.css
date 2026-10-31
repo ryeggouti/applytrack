@@ -2075,3 +2075,4 @@ footer a {
 [data-theme="dark"] .theme-toggle .theme-sun{opacity:1;transform:rotate(0) scale(1)}
 .theme-toggle:active{transform:scale(.94)}
 @media(prefers-reduced-motion:reduce){.theme-toggle svg{transition:none}.theme-toggle:active{transform:none}}
+#research-editor-launch:disabled{opacity:1;cursor:default;background:var(--line);color:var(--muted)}
