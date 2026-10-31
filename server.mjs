@@ -10,7 +10,8 @@ const universityHandler=createUniversityHandler(searchUniversities);
 function json(res,status,data){res.writeHead(status,{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"});res.end(JSON.stringify(data));}
 export const server=http.createServer(async(req,res)=>{
   try {
-    const url=new URL(req.url,process.env.PUBLIC_ORIGIN||"http://"+(req.headers.host||"localhost"));
+    const url=new URL(req.url,process.env.PUBLIC_ORIGIN||process.env.RENDER_EXTERNAL_URL||"http://"+(req.headers.host||"localhost"));
+    if(url.pathname==="/health")return json(res,200,{status:"ok"});
     if (["/api/universities","/api/research"].includes(url.pathname)) {
       const headers=new Headers(req.headers);
       headers.set("cf-connecting-ip",req.socket.remoteAddress||"local");
