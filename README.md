@@ -11,6 +11,9 @@ the interface; a separately hosted research API (configured in
 is unreachable, the planner keeps working and offers manual entry instead.
 Saved applications stay in this browser.
 
+To host the complete app independently of ChatGPT, use the included free Render
+Node.js configuration. See [the setup and backup migration steps](docs/HOSTING.md#independent-free-nodejs-hosting-render).
+
 ## Run locally
 
 Use Node 22.13+ and run `node server.mjs`, then open http://127.0.0.1:3000.
