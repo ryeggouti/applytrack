@@ -1,5 +1,36 @@
 # Hosting
 
+## Netlify Free (no card required by the advertised plan)
+
+This is the recommended route if Render asks for card verification. The included
+`netlify.toml` builds the static interface and two Node.js Functions for university
+lookup and research. Both endpoints use the new site's own domain; no requests go
+to ChatGPT hosting. Do not use the GitHub Pages build command for this deployment.
+
+1. Merge `deploy/netlify-no-card` into `main` on GitHub.
+2. Export your college-list backup from the old website.
+3. Sign up at https://app.netlify.com/ and choose the **Free** plan.
+4. Choose **Add new project → Import an existing project → GitHub**.
+5. Select `ryeggouti/applytrack` and branch `main`.
+6. Keep the detected settings: build command `node scripts/build-netlify.mjs`,
+   publish directory `dist-netlify`, functions directory `netlify/functions`.
+7. Deploy, open the provided `netlify.app` URL, and import your backup.
+8. Test university lookup and research before retiring the old website.
+
+No API key, database or environment secret is needed. Lists remain in browser
+storage, which is separate for each website address. The existing sites stay
+available; this setup does not delete or transfer their stored data automatically.
+
+The advertised Free plan requires no credit card and has a monthly usage-credit
+limit. Functions have a 60-second execution limit; research already uses bounded
+fetches and a 55-second browser timeout. Per-instance request limits remain
+best-effort when serverless instances scale. Deployment on a real Netlify account
+still needs to be verified after connecting the repo.
+
+References: https://www.netlify.com/blog/introducing-netlify-free-plan/,
+https://www.netlify.com/pricing/,
+https://docs.netlify.com/build/functions/configuration/.
+
 ## Independent free Node.js hosting (Render)
 
 `render.yaml` runs the complete planner and research API in one Node.js service.
