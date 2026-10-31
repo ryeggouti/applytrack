@@ -547,6 +547,7 @@ form label {
   margin-top: 15px;
 }
 form label > input,
+.fee-row > input,
 form label > select,
 textarea {
   display: block;
