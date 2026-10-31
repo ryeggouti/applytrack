@@ -15,9 +15,14 @@
   <a class="brand" href="#applications"><span class="mark">a<span>↗</span></span> ApplyTrack</a>
   <div class="workspace">YOUR WORKSPACE</div>
   <nav class="workspace-nav" aria-label="Your workspace">
+    <a class="nav" href="#week" data-view="week"><span aria-hidden="true">✦</span><span>This week</span></a>
     <a class="nav active" href="#applications" data-view="applications" aria-current="page"><span aria-hidden="true">▦</span><span>My applications</span></a>
     <a class="nav" href="#deadlines" data-view="deadlines"><span aria-hidden="true">◷</span><span>Deadlines</span><span id="nav-deadlines-count" class="nav-count" hidden></span></a>
     <a class="nav" href="#documents" data-view="documents"><span aria-hidden="true">☑</span><span>Documents</span><span id="nav-documents-count" class="nav-count" hidden></span></a>
+    <a class="nav" href="#tasks" data-view="tasks"><span aria-hidden="true">✓</span><span>Tasks</span></a>
+    <a class="nav" href="#essays" data-view="essays"><span aria-hidden="true">✎</span><span>Essays</span></a>
+    <a class="nav" href="#recommendations" data-view="recommendations"><span aria-hidden="true">♡</span><span>Recommendations</span></a>
+    <a class="nav" href="#funding" data-view="funding"><span aria-hidden="true">◇</span><span>Scholarships &amp; aid</span></a>
     <a class="nav" href="#about" data-view="about"><span aria-hidden="true">ⓘ</span><span>About</span></a>
   </nav>
   <a class="aside-note next-step" href="#deadlines"><span aria-hidden="true">◷</span><h3 id="next-step-title">Your next step</h3><p id="next-step-copy">Add a college to start planning.</p></a>
@@ -138,6 +143,8 @@
     <section class="profile-card" aria-labelledby="profile-heading"><div><span class="eyebrow">OPTIONAL</span><h2 id="profile-heading">Your profile</h2><p id="profile-summary">Add your name and application details to personalize greetings and prefill research.</p></div><button type="button" class="secondary" id="edit-profile">Set up my profile</button></section>
     <div class="about-steps"><button type="button" class="secondary" id="replay-tour">Replay the tour ↗</button><h2>How it works</h2><ol><li><strong>Build your list.</strong> Add a college by hand, or research it to pull in requirements from its official pages.</li><li><strong>Check the details.</strong> Confirm the round, deadline, fee and documents against the college’s website.</li><li><strong>Keep moving.</strong> Tick off documents, update each status, and export a backup now and then.</li></ol></div>
   </section>
+
+  <div id="planning-views"></div>
 
   <footer>
     <span>ApplyTrack · <a href="https://github.com/ryeggouti/applytrack/blob/main/docs/PRIVACY.md" target="_blank" rel="noopener noreferrer">Privacy</a> · <a href="https://github.com/ryeggouti/applytrack" target="_blank" rel="noopener noreferrer">Source on GitHub</a></span>
@@ -290,7 +297,7 @@ Recommendation"></textarea>
 
 <dialog id="confirm">
   <h2>Remove this college?</h2>
-  <p>Its details and checklist will be deleted from this browser.</p>
+  <p>Its details, checklist, tasks, essays, recommendations and funding plans will be deleted from this browser. Export a backup first if you may need them.</p>
   <div class="form-actions">
     <button class="secondary" id="cancel-delete">Keep college</button>
     <button class="danger" id="confirm-delete">Remove college</button>
@@ -465,11 +472,13 @@ Recommendation"></textarea>
 </dialog>
 
 <script src="hosting.js"></script>
+<script src="planning-model.js"></script>
 <script src="app.js"></script>
 <script src="research.js"></script>
 <script src="research-autofill.js"></script>
 <script src="workspace.js"></script>
 <script src="profile.js"></script>
+<script src="planning.js"></script>
 <script src="welcome.js"></script>
 
 </body>

@@ -9,6 +9,7 @@
     {view:'applications',target:'#research-launch',title:'Let the official pages help.',text:'Research a university to pull in suggested documents, dates and fees, each with a link to its source. You choose what to keep.'},
     {view:'deadlines',target:'#deadline-overview',title:'See what’s due next.',text:'Deadlines shows every saved date in order, flags the ones coming up soon, and lists colleges that still need a date.'},
     {view:'documents',target:'#document-overview',title:'Tick things off.',text:'Documents gathers every checklist in one place. Checking an item here also updates its college.'},
+    {view:'week',target:'#view-week .planning-stats',title:'Plan the work behind each application.',text:'Add tasks, essay drafts, recommendation requests and scholarship or aid dates. This week gathers your next seven days and overdue work.'},
     {view:'about',target:'#about-export',title:'Keep a backup.',text:'Your list is saved only in this browser. Export a backup now and then to keep a copy or move to another device.'}
   ];
   function nextGreeting(last,random=Math.random()){

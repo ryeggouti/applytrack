@@ -14,8 +14,8 @@
   }
   globalThis.ApplyTrackWorkspace={groupDeadlines};
   if(typeof document==='undefined')return;
-  const views=['applications','deadlines','documents','about'];
-  const titles={applications:'My applications',deadlines:'Deadlines',documents:'Documents',about:'About'};
+  const views=['applications','deadlines','documents','about','week','tasks','essays','recommendations','funding'];
+  const titles={applications:'My applications',deadlines:'Deadlines',documents:'Documents',about:'About',week:'This week',tasks:'Tasks',essays:'Essays',recommendations:'Recommendations',funding:'Scholarships & aid'};
   function showView(focus=false){
     const requested=location.hash.slice(1),view=views.includes(requested)?requested:'applications';
     for(const section of document.querySelectorAll('[data-workspace-view]'))section.hidden=section.dataset.workspaceView!==view;
@@ -28,6 +28,7 @@
     $('workspace-title').textContent=titles[view];
     if(focus){document.querySelector('#view-'+view+' h1')?.focus({preventScroll:true});window.scrollTo(0,0);}
   }
+  globalThis.showWorkspaceView=showView;
   function empty(container,title,description){
     const el=node('div','empty');el.append(node('div','empty-icon','↗'),node('h3','',title),node('p','',description));
     el.append(button('Go to my applications',()=>{location.hash='applications';},'secondary'));container.append(el);

@@ -28,6 +28,11 @@ function validZone(zone) {
 function hasSavedResearch(c) {
   return c?.researched===true || /^Official-source research · /m.test(c?.notes||'');
 }
+function cleanPlanning(value) {
+  if(globalThis.ApplyTrackPlanning)return ApplyTrackPlanning.clean(value);
+  if(value===undefined)return {};
+  throw new Error('Planning could not load. Reload before editing your saved list.');
+}
 function validate(data) {
   if (!Array.isArray(data) || data.length > 1000) throw new Error("Choose an ApplyTrack backup with up to 1,000 colleges.");
   const ids = new Set();
@@ -49,7 +54,7 @@ function validate(data) {
     if (c.website && !safeWebsite(c.website)) throw new Error("College websites must use https:// or http://.");
     ids.add(c.id);
     return {id:c.id,name:c.name.trim(),status:c.status,round:c.round,waiver:c.waiver,deadline:c.deadline,deadlineTime:c.deadlineTime,deadlineZone:c.deadlineZone||"",
-      notes:c.notes,website:c.website,fee:c.fee,currency:c.currency,researched:hasSavedResearch(c),documents:c.documents.map(d=>({name:d.name,done:d.done}))};
+      planning:cleanPlanning(c.planning),notes:c.notes,website:c.website,fee:c.fee,currency:c.currency,researched:hasSavedResearch(c),documents:c.documents.map(d=>({name:d.name,done:d.done}))};
   });
 }
 function safeWebsite(value) { try { return ["https:","http:"].includes(new URL(value).protocol); } catch { return false; } }
@@ -150,7 +155,7 @@ function renderBackupStatus() {
     : "Your list lives only in this browser. Export a backup so you don’t lose it if browser data is cleared.";
 }
 function exportBackup() {
-  const blob=new Blob([JSON.stringify({format:"ApplyTrack",version:2,colleges},null,2)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({format:"ApplyTrack",version:3,colleges},null,2)],{type:"application/json"});
   const a=node("a");const url=URL.createObjectURL(blob);a.href=url;a.download="applytrack-"+today()+".json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
   updateBackupState({lastExport:new Date().toISOString()});renderBackupStatus();
 }
@@ -177,6 +182,7 @@ function documentCaption(name) {
 }
 function render() {
   globalThis.renderWorkspaceViews?.(colleges);
+  globalThis.renderPlanningViews?.(colleges);
   renderBackupStatus();
   $("total").textContent=colleges.length;
   $("count").textContent=colleges.length;
@@ -238,7 +244,8 @@ function render() {
     const actions=node("div","actions");
     const editButton=button("Edit",()=>edit(c)),removeButton=button("Remove",()=>{deleteId=c.id;$("confirm").showModal();});
     editButton.setAttribute("aria-label","Edit "+c.name);removeButton.setAttribute("aria-label","Remove "+c.name);
-    actions.append(editButton,removeButton);
+    const planButton=button('Plan work',()=>globalThis.openCollegePlanning?.(c.id));planButton.setAttribute('aria-label','Plan work for '+c.name);
+    actions.append(planButton,editButton,removeButton);
     bottom.append(site,actions);card.append(bottom);list.append(card);
   }
 }
@@ -262,7 +269,7 @@ $("college-form").addEventListener("submit",e=>{
   const names=f.get("documents").split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
   const available=old?old.documents.slice():[];
   const documents=names.map(name=>{const i=available.findIndex(d=>d.name===name),prior=i>=0?available.splice(i,1)[0]:null;return{name,done:prior?.done||false};});
-  const c={id,name:f.get("name").trim(),website:f.get("website").trim(),deadline:f.get("deadline"),deadlineTime:f.get("deadlineTime")||"",deadlineZone:f.get("deadlineZone")||"",
+  const c={id,planning:old?.planning,name:f.get("name").trim(),website:f.get("website").trim(),deadline:f.get("deadline"),deadlineTime:f.get("deadlineTime")||"",deadlineZone:f.get("deadlineZone")||"",
     fee:f.get("fee")===""?"":Number(f.get("fee")),currency:f.get("currency")||"USD",researched:e.currentTarget.dataset.researched==='true',round:f.get("round"),waiver:f.get("waiver"),status:f.get("status"),notes:f.get("notes").trim(),documents};
   try {const [clean]=validate([c]);const next=old?colleges.map(x=>x.id===id?clean:x):[...colleges,clean];if(save(next)){$("editor").close();render();}}catch(error){announce(error.message);}
 });
@@ -278,9 +285,9 @@ function finishImport(next,message){
 $("file").addEventListener("change",async e=>{
   const file=e.target.files[0];if(!file)return;
   try {
-    if(file.size>2000000)throw new Error("Choose a backup smaller than 2 MB.");
+    if(file.size>20000000)throw new Error("Choose a backup smaller than 20 MB.");
     const data=JSON.parse(await file.text());
-    if(data.format!=="ApplyTrack"||![1,2].includes(data.version))throw new Error("This doesn’t look like an ApplyTrack backup.");
+    if(data.format!=="ApplyTrack"||![1,2,3].includes(data.version))throw new Error("This doesn’t look like an ApplyTrack backup.");
     const imported=validate(data.colleges);
     if(!colleges.length){finishImport(imported,"Imported "+imported.length+" college"+(imported.length===1?"":"s")+".");return;}
     const existingIds=new Set(colleges.map(c=>c.id)),overlap=imported.filter(c=>existingIds.has(c.id)).length;
