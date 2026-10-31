@@ -30,6 +30,9 @@ Created with assistance from an AI coding assistant.
 
 ## Features
 
+- This week overview, tasks, essay drafts, recommendation requests, and separate
+  scholarship / financial-aid dates; see [application planning](docs/PLANNING.md)
+
 - Custom colleges, rounds (including UCAS and OUAC), deadlines with optional time and time zone, fees in 15 currencies, and notes
 - Countdown labels and urgency highlighting for upcoming deadlines
 - Device-local document checklists, backup reminders, and JSON backups that can be merged or restore a whole list
