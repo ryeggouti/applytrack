@@ -7,7 +7,8 @@
   <meta name="description" content="Your college applications, one clear next step at a time.">
   <title>ApplyTrack — Your next chapter</title>
   <link rel="icon" type="image/svg+xml" sizes="any" href="favicon.svg">
-  <script>document.documentElement.classList.add('arrival-pending');window.applytrackIntroFallback=setTimeout(()=>document.documentElement.classList.remove('arrival-pending'),6000);</script>
+  <script>document.documentElement.classList.add('arrival-pending');window.applytrackIntroFallback=setTimeout(()=>document.documentElement.classList.remove('arrival-pending'),3000);</script>
+  <script src="theme.js"></script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -36,6 +37,7 @@
   <header>
     <span>YOUR NEXT CHAPTER</span>
     <div class="header-actions">
+      <label class="theme-control">Appearance <select id="theme-select" aria-label="Appearance"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
       <button class="text-btn" id="export">↓ Export backup</button>
       <button class="text-btn" id="import">↑ Import</button>
       <input type="file" id="file" accept=".json,application/json" hidden>
