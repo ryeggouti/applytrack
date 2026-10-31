@@ -6,7 +6,7 @@ test('accepts academic suffixes and listed university domains',()=>{
   assert.doesNotThrow(()=>academicURL(url),url);
 });
 test('rejects non-university and insecure addresses',()=>{
- for(const url of ['https://example.com/','http://admissions.yale.edu/','https://utoronto.ca.evil.com/','https://notutoronto.ca/','https://user:pw@yale.edu/'])
+ for(const url of ['https://uni-anything.de/','https://admissions.universite-madeup.fr/','https://uni-heidelberg.de.evil.com/','https://example.com/','http://admissions.yale.edu/','https://utoronto.ca.evil.com/','https://notutoronto.ca/','https://user:pw@yale.edu/'])
   assert.throws(()=>academicURL(url),url);
 });
 test('keeps crawling within the same institution',()=>{
