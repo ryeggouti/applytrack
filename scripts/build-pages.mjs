@@ -8,7 +8,7 @@ const output=path.join(root,"_site");
 await fs.mkdir(output,{recursive:true});
 await fs.cp(path.join(root,"public"),output,{recursive:true});
 const config={
-  apiBase:"https://applytrack-ryeggouti.maplebison10.chatgpt.site",
+  apiBase:"https://zesty-quokka-213e5b.netlify.app",
 };
 await fs.writeFile(path.join(output,"hosting.js"),"window.APPLYTRACK_HOSTING = "+JSON.stringify(config)+";\n");
 const versions={};
