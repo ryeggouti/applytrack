@@ -24,6 +24,7 @@
       link.classList.toggle('active',active);
       if(active)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');
     }
+    if(['tasks','essays','recommendations','funding'].includes(view))$('work-nav').open=true;
     document.title='ApplyTrack — '+titles[view];
     $('workspace-title').textContent=titles[view];
     if(focus){document.querySelector('#view-'+view+' h1')?.focus({preventScroll:true});window.scrollTo(0,0);}

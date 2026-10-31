@@ -10,7 +10,17 @@
     text.append(h,node('p','',description));head.append(text);section.append(head);root.append(section);sections[type]=section;return {section,head};
   }
   const week=makeView('week','A clear start to your week.','Your next seven calendar days, plus anything overdue. All dates come from your saved entries.');
+  function exportCalendar(){
+    const result=ApplyTrackCalendar.build(colleges,{toInstant:deadlineInstant});
+    if(!result.count){announce('Add a date to an unfinished application or planning item before exporting a calendar.');return;}
+    const url=URL.createObjectURL(new Blob([result.text],{type:'text/calendar;charset=utf-8'})),link=node('a');
+    link.href=url;link.download='applytrack-dates-'+today()+'.ics';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    announce('Calendar exported with '+result.count+' dates. Import the file into your calendar. Re-export after changing dates; this is a snapshot, not a live sync.');
+  }
+  const quickActions=node('div','heading-actions week-actions');quickActions.append(button('+ Add task',()=>open('tasks'),'primary'),button('Export calendar',exportCalendar,'secondary'));week.head.append(quickActions);
+  const deadlineExport=button('Export calendar',exportCalendar,'secondary');deadlineExport.id='deadline-calendar-export';$('deadline-overview').before(deadlineExport);
   const weekStats=node('div','planning-stats');week.section.append(weekStats);
+  week.section.append(node('p','field-help calendar-help','Calendar export includes all unfinished dated work. Private notes and recommender names stay out. Import the file into your calendar; re-export after changes.'));
   const weekList=node('div');week.section.append(weekList);
   for(const [type,definition] of Object.entries(model.types)){
     const {section,head}=makeView(type,...copy[type]);
@@ -111,10 +121,14 @@
       if(!visible.length)empty(lists[type].list,relevant.length?'Nothing in this view.':'Your '+definition.label.toLowerCase()+' start here.',relevant.length?'Change the progress filter to see the rest.':'Add '+(type==='essays'?'an ':'a ')+definition.singular+' and give your next step a little structure.',button('+ Add '+definition.singular,()=>open(type,college.value),'secondary'));
       else for(const row of visible)lists[type].list.append(rowCard(row));
     }
+    const undated=rows.filter(r=>!r.item.date&&!model.complete(r.type,r.item.status));
+    for(const college of records)if(!college.deadline&&college.status!=='Submitted')undated.push({college,type:'admissions',item:{id:college.id,title:'Application deadline',date:'',status:college.status}});
+    const previousUndated=weekList.querySelector('.week-undated')?.open;
     const grouped=model.week(records,today(),c=>deadlineState(c).past);weekList.replaceChildren();weekStats.replaceChildren();
-    for(const [label,count] of [['Due in seven days',grouped.upcoming.length],['Overdue',grouped.overdue.length],['Tasks completed',rows.filter(r=>r.type==='tasks'&&r.item.status==='Done').length]]){const stat=node('div');stat.append(node('span','',label),node('strong','',String(count)));weekStats.append(stat);}
+    for(const [label,count] of [['Due in seven days',grouped.upcoming.length],['Overdue',grouped.overdue.length],['Without a date',undated.length]]){const stat=label==='Without a date'&&count?button('',()=>{const details=weekList.querySelector('.week-undated');if(details){details.open=true;details.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});details.querySelector('summary').focus({preventScroll:true});}},'stat-action'):node('div');stat.append(node('span','',label),node('strong','',String(count)));weekStats.append(stat);}
     for(const [title,items] of [['Needs your attention',grouped.overdue],['Coming up',grouped.upcoming]]){if(!items.length)continue;const section=node('section','week-group');section.append(node('h2','',title));for(const row of items)section.append(rowCard(row,true));weekList.append(section);}
-    if(!grouped.overdue.length&&!grouped.upcoming.length)empty(weekList,'A little breathing room.','No open items have a date in the next seven days. Add tasks or review your undated plans.',button('Plan a task',()=>{location.hash='tasks';open('tasks');},'secondary'));
+    if(!grouped.overdue.length&&!grouped.upcoming.length)empty(weekList,undated.length?'Your next steps need dates.':'A little breathing room.',undated.length?'Review the undated work below to decide what comes next.':'No open items have a date in the next seven days. Add a task whenever you’re ready.',button('Plan a task',()=>{location.hash='tasks';open('tasks');},'secondary'));
+    if(undated.length){const details=node('details','week-undated'),summary=node('summary','','Without a date · '+undated.length);details.open=previousUndated??(!grouped.upcoming.length&&!grouped.overdue.length);details.append(summary,node('p','field-help','A date helps put this work in your weekly plan. Leave it blank until you can confirm it.'));for(const row of undated)details.append(rowCard(row,true));weekList.append(details);}
     for(const id of opened){const el=$(id);if(el)el.open=true;}
   };
   globalThis.openCollegePlanning=collegeId=>{location.hash='tasks';filters.tasks.college.value=collegeId;filters.tasks.state.value='open';renderPlanningViews(colleges);};

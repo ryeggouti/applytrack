@@ -20,6 +20,33 @@ Each tracker filters by college and open/completed status. **Plan work** on an
 application card opens that college's task list. Item removal offers **Undo**.
 Removing a college removes its associated planning items, with confirmation.
 
+## A quieter workspace
+
+The sidebar groups Tasks, Essays, Recommendations and Scholarships & aid under
+**Application work**. The group opens automatically when visiting one of those
+views, including a direct link or reload. This week, applications, deadlines and
+documents remain visible at the top level.
+
+**This week** also counts open work without a date, including undated admission
+deadlines. Select **Without a date** to open and jump to that list. When there is
+no upcoming or overdue work, the list opens by default if undated work exists.
+
+## Calendar export
+
+Choose **Export calendar** from This week or Deadlines to download an `.ics`
+snapshot of all unfinished dated work, including dates beyond the current week.
+Import the file using your calendar app's import option. Completed tracker items,
+submitted admissions and items without a date are excluded. Private note and
+recommender-name fields are not included; titles and college names are included.
+
+Date-only items become all-day events. Admission cutoffs with an entered time
+use their saved time zone (or the browser's local zone when set to My time zone)
+and export as UTC. Selecting a zone without a time does not invent a cutoff.
+The file does not add notification alarms or submit anything to a calendar
+provider. This is a snapshot, not an automatic calendar subscription: changes in
+ApplyTrack require a fresh export. Stable event IDs help calendar apps recognize
+events, but duplicate handling on reimport depends on the calendar app.
+
 ## Saved data and backups
 
 Planning items are nested under their college in the existing `applytrack-v1`
