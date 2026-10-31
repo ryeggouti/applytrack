@@ -13,7 +13,7 @@
   globalThis.ApplyTrackWorkspace={groupDeadlines};
   if(typeof document==='undefined')return;
   const views=['applications','deadlines','documents','about'];
-  const titles={applications:'Your next chapter',deadlines:'Deadlines',documents:'Documents',about:'About'};
+  const titles={applications:'My applications',deadlines:'Deadlines',documents:'Documents',about:'About ApplyTrack'};
   function showView(focus=false){
     const requested=location.hash.slice(1),view=views.includes(requested)?requested:'applications';
     for(const section of document.querySelectorAll('[data-workspace-view]'))section.hidden=section.dataset.workspaceView!==view;
@@ -23,6 +23,7 @@
       if(active)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');
     }
     document.title='ApplyTrack — '+titles[view];
+    $('workspace-title').textContent=titles[view];
     if(focus){document.querySelector('#view-'+view+' h1')?.focus({preventScroll:true});window.scrollTo(0,0);}
   }
   function empty(container,title,description){
@@ -32,6 +33,20 @@
   function badge(id,count){const el=$(id);el.textContent=String(count);el.hidden=!count;}
   globalThis.renderWorkspaceViews=records=>{
     const groups=groupDeadlines(records,today());
+    $('application-intro').classList.toggle('intro-compact',records.length>0);
+    if(records.length){
+      const name=globalThis.ApplyTrackProfile?.read?.()?.preferredName;
+      $('application-heading').textContent=name?'Your applications, '+name+'.':'Your applications, in view.';
+      const active=records.filter(c=>c.status!=='Submitted').length;
+      $('application-summary').textContent=active+' application'+(active===1?'':'s')+' in progress · '+records.filter(c=>c.status==='Submitted').length+' submitted';
+    }else{
+      $('application-heading').textContent='Make room for what’s next.';
+      $('application-summary').textContent='Every college, deadline, and document. One place to keep moving forward.';
+    }
+    const next=groups.upcoming[0];
+    $('next-step-title').textContent=next?'Next deadline':'Your next step';
+    $('next-step-copy').textContent=next?next.name+' · '+dateLabel(next.deadline):groups.missing.length?'Add the missing dates for '+groups.missing.length+' college'+(groups.missing.length===1?'':'s')+'.':records.length?'Check your documents and keep your list up to date.':'Add a college to start planning.';
+    document.querySelector('.next-step').href=next||groups.missing.length?'#deadlines':records.length?'#documents':'#applications';
     const allDocuments=records.flatMap(c=>c.documents),done=allDocuments.filter(d=>d.done).length;
     badge('nav-deadlines-count',groups.upcoming.length);badge('nav-documents-count',allDocuments.length-done);
     $('deadline-overview').textContent=groups.upcoming.length+' upcoming · '+groups.past.length+' past · '+groups.missing.length+' without a date';
@@ -65,7 +80,7 @@
           college.documents[index].done=input.checked;
           if(save(next)){render();$(input.id)?.focus({preventScroll:true});}else input.checked=!input.checked;
         });
-        line.append(input,node('span','',d.name));checks.append(line);
+        line.append(input,documentCaption(d.name));checks.append(line);
       });
       if(!c.documents.length)checks.append(node('p','field-help','No documents yet. Edit the checklist to add the requirements you have confirmed.'));
       card.append(checks);docs.append(card);

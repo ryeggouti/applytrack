@@ -53,6 +53,13 @@ function node(tag,cls,text) { const n=document.createElement(tag); if(cls)n.clas
 function today() { const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-"); }
 function dateLabel(value) { return new Date(value+"T12:00:00").toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}); }
 function button(text,fn,cls="text-btn") { const b=node("button",cls,text);b.type="button";b.addEventListener("click",fn);return b; }
+function documentCaption(name) {
+  const match=name.match(/^(.+?) — (Required in source — verify scope|Mentioned — verify applicability)$/);
+  if(!match)return node('span','',name);
+  const wrap=node('span','document-caption'),details=node('details','document-context');
+  details.append(node('summary','','Requirement details'),node('span','',match[2]));
+  wrap.append(node('span','',match[1]),details);return wrap;
+}
 function render() {
   globalThis.renderWorkspaceViews?.(colleges);
   $("total").textContent=colleges.length;
@@ -89,12 +96,12 @@ function render() {
     c.documents.forEach((d,i)=>{
       const label=node("label","document"),input=node("input");input.type="checkbox";input.checked=d.done;
       input.addEventListener("change",()=>{const next=structuredClone(colleges);next.find(x=>x.id===c.id).documents[i].done=input.checked;if(save(next))render();else input.checked=!input.checked;});
-      label.append(input,node("span","",d.name));checks.append(label);
+      label.append(input,documentCaption(d.name));checks.append(label);
     });
     if(!c.documents.length)checks.append(node("span","round","No documents added yet. Edit this college to add its requirements."));
     card.append(checks);
     if(c.notes){
-      const details=node("details","college-details"),summary=node("summary","","See details & sources"),notes=node("div","notes",c.notes);
+      const details=node("details","college-details"),summary=node("summary","","Details & sources"),notes=node("div","notes",c.notes);
       notes.tabIndex=0;notes.setAttribute("aria-label","Notes and research sources for "+c.name);
       details.open=expandedCollegeDetails.has(c.id);
       details.append(summary,notes);
