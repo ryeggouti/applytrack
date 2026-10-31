@@ -11,8 +11,10 @@ domain, prioritizing the requested applicant and entry type. Each suggestion has
 a source excerpt, source URL, classification and lookup time. It honors robots
 rules, validates every redirect, limits response sizes, and reports partial scans.
 It does not execute page scripts, bypass access controls, inspect PDFs, or use a
-paid AI service. Academic domains currently supported: .edu, .edu.country,
-.ac.country, plus MIT's official admissions domain.
+paid AI service. Supported domains: .edu, .edu.country, .ac.country,
+uni-/univ-<name> sites in several European countries, and an explicit list of
+university domains in `lib/urls.mjs` (for example utoronto.ca, mcgill.ca,
+ethz.ch and tudelft.nl). Add a university's root domain to that list to support it.
 
 These are keyword-based research suggestions, not a verified or exhaustive
 admissions policy. Optional, recommended and conditional language is retained;
@@ -23,9 +25,11 @@ Dates and fees are shown as source excerpts, not guessed or automatically entere
 Verify the relevant round, entry year, program, citizenship/residence and schooling.
 Financial-aid and enrollment documents can have different applicability.
 
-Deadlines are calendar dates entered by the student; always confirm the date,
-submission time, time zone, and document requirements with the college.
-Fees are entered in USD. This tool does not submit applications or send reminders.
+Deadlines are calendar dates entered by the student, with an optional time and
+time zone; when both are set, the planner also shows the deadline in the
+student's own time zone. Always confirm the date, submission time, time zone,
+and document requirements with the college. Fees can be entered in one of 15
+currencies; research only extracts US-dollar fees. This tool does not submit applications or send reminders.
 
 ## Verification
 

@@ -138,7 +138,7 @@
   form.elements.round.addEventListener('change',fillDeadline);
   globalThis.applyResearchAutofill=(report,cycle,{skipDeadline=false}={})=>{
     const result=extract(report,cycle);result.notesOverflow=false;active=result;generated='';
-    if(result.fee!==null&&form.elements.fee.value.trim()==='')form.elements.fee.value=String(result.fee);
+    if(result.fee!==null&&form.elements.fee.value.trim()===''){form.elements.fee.value=String(result.fee);if(form.elements.currency)form.elements.currency.value='USD';}
     if(result.waiverStatus && form.elements.waiver.value==='Unknown' && !waiverTouched)form.elements.waiver.value=result.waiverStatus;
     if(!skipDeadline)fillDeadline();
     else active=null;

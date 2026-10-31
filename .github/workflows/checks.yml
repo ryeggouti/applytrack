@@ -11,7 +11,6 @@ jobs:
         with:
           node-version: '22'
       - run: npm install --ignore-scripts --no-package-lock
-      - run: node --check server.mjs
-      - run: node --check public/app.js
-      - run: node --check public/research.js
+      - name: Check script syntax
+        run: for file in server.mjs lib/*.mjs scripts/*.mjs public/*.js; do node --check "$file" || exit 1; done
       - run: node --test

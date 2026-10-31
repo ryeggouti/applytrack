@@ -12,11 +12,21 @@ editLaunch.id="research-editor-launch";
 $("college-form").querySelector(".form-intro").after(editLaunch);
 function researchStatus(message,error=false){
   const el=$("research-status");el.hidden=false;el.textContent=message;el.className=error?"research-error":"research-info";
+  $("research-fallback").hidden=true;
 }
+function researchUnavailable(){
+  $("research-status").hidden=true;$("research-fallback").hidden=false;$("research-fallback").scrollIntoView({block:"nearest"});$("research-manual").focus();
+}
+const serviceDown=(error,response)=>error instanceof TypeError||(response&&response.status>=500);
+$("research-manual").addEventListener("click",()=>{
+  const name=$("university-query").value.trim(),url=$("research-url").value.trim(),fromEditor=$("editor").open;
+  researchDialog.close();
+  if(!fromEditor){edit();const form=$("college-form");form.elements.name.value=name;if(safeWebsite(url))form.elements.website.value=url;}
+});
 function stopLookup(){lookupSequence++;lookupController?.abort();lookupController=null;$("research-run").disabled=false;}
 function clearReport(){researchReport=null;$("research-results").hidden=true;$("research-documents").replaceChildren();}
 function openResearch(fromEditor=false){
-  stopLookup();clearReport();$("research-status").hidden=true;
+  stopLookup();clearReport();$("research-status").hidden=true;$("research-fallback").hidden=true;
   globalThis.ApplyTrackProfile?.applyResearchDefaults?.();
   researchTargetId=fromEditor?$("college-form").elements.id.value:null;
   const form=$("college-form");
@@ -33,36 +43,42 @@ $("university-search").addEventListener("submit",async e=>{
   e.preventDefault();stopLookup();clearReport();const seq=lookupSequence;
   const submit=e.currentTarget.querySelector("button");submit.disabled=true;
   $("university-matches").replaceChildren();researchStatus("Looking for matching universities…");
-  lookupController=new AbortController();
+  lookupController=new AbortController();let response=null;
   try{
-    const response=await fetch(researchEndpoint("/api/universities?q="+encodeURIComponent($("university-query").value.trim())),{signal:lookupController.signal,credentials:"omit"});
+    response=await fetch(researchEndpoint("/api/universities?q="+encodeURIComponent($("university-query").value.trim())),{signal:lookupController.signal,credentials:"omit"});
     const data=await response.json();if(seq!==lookupSequence)return;if(!response.ok)throw new Error(data.error||"University search is unavailable.");
     for(const university of data.universities||[]){
       const match=button("",()=>{
         stopLookup();clearReport();$("research-url").value=university.url;
-        $("university-query").value=university.name;researchStatus("Selected "+university.name+". Confirm the URL and applicant type, then find requirements.");
+        $("university-query").value=university.name;researchStatus("Selected "+university.name+". Check the address and your applicant type, then choose Find requirements.");
         $("university-matches").replaceChildren();$("research-run").focus();
       },"university-match");
       match.append(node("strong","",university.name),node("span","",university.url),node("small","",university.description+" · "+university.discovery));
       $("university-matches").append(match);
     }
-    researchStatus(data.message||"Select the university you mean. Similar names can refer to different campuses.");
-  }catch(error){if(error.name!=="AbortError"&&seq===lookupSequence)researchStatus("University search failed. Paste the official admissions URL instead.",true);}
+    researchStatus(data.message||"Pick the university you mean. Similar names can belong to different campuses.");
+  }catch(error){
+    if(error.name==="AbortError"||seq!==lookupSequence)return;
+    if(serviceDown(error,response))researchUnavailable();
+    else researchStatus(error.message||"University search failed. Paste the admissions-page address instead.",true);
+  }
   finally{submit.disabled=false;}
 });
 $("research-form").addEventListener("submit",async e=>{
   e.preventDefault();stopLookup();clearReport();const seq=lookupSequence;lookupController=new AbortController();
   $("research-run").disabled=true;
   researchStatus("Reading official admissions pages… This can take about 30 seconds.");
-  const timer=setTimeout(()=>lookupController?.abort(),55000);
+  const timer=setTimeout(()=>lookupController?.abort(),55000);let response=null;
   try{
-    const response=await fetch(researchEndpoint("/api/research"),{method:"POST",headers:{"Content-Type":"application/json"},credentials:"omit",signal:lookupController.signal,
+    response=await fetch(researchEndpoint("/api/research"),{method:"POST",headers:{"Content-Type":"application/json"},credentials:"omit",signal:lookupController.signal,
       body:JSON.stringify({url:$("research-url").value.trim(),applicant:$("research-applicant").value,level:$("research-level").value})});
     const data=await response.json();if(seq!==lookupSequence)return;if(!response.ok)throw new Error(data.error||"This university could not be inspected.");
     researchReport=data;renderResearch(data);
     researchStatus(data.pages.length?"Read "+data.pages.length+" official pages. Suggestions are ready to review.":"No readable source pages were found. Try a more specific official admissions URL.",!data.pages.length);
   }catch(error){
-    if(seq===lookupSequence)researchStatus(error.name==="AbortError"?"The lookup timed out. Try a more specific admissions page.":error.message,true);
+    if(seq!==lookupSequence)return;
+    if(error.name!=="AbortError"&&serviceDown(error,response))researchUnavailable();
+    else researchStatus(error.name==="AbortError"?"The lookup timed out. Try a more specific admissions page.":error.message,true);
   }finally{clearTimeout(timer);if(seq===lookupSequence)$("research-run").disabled=false;}
 });
 function sourceLink(url,title){

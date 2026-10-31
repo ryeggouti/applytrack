@@ -1,0 +1,5 @@
+# Privacy and backups
+
+Application records stay in localStorage for the browser and site address used. Clearing browser data removes them, and some browsers (notably Safari) may clear site storage after a period without visits. ApplyTrack asks the browser to keep its storage (`navigator.storage.persist()`), tracks when you last exported a backup, and reminds you when a fresh backup is due. JSON exports are private backups; do not commit them. When importing into a non-empty list you can either add only colleges that aren't already on it, or replace the whole list with the backup.
+
+The research server receives only the university query or URL and applicant/entry type. Stored application notes, fees and completed documents are never sent. The university directory may query Wikidata; public admissions sites are fetched by the server. Google Fonts is used for typography. No AI API key or ChatGPT sign-in is needed. Cross-origin API requests omit browser credentials. Client addresses may be used transiently for best-effort rate limiting, and the hosting provider may keep infrastructure logs.

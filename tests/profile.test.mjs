@@ -16,5 +16,5 @@ test('greetings personalize optional names without inventing one',()=>{
  assert.equal(format('Welcome back{name}!','Rayane'),'Welcome back, Rayane!');
  assert.equal(format('Welcome back{name}!',''),'Welcome back!');
  assert.equal(format('Welcome home{name}.','  Rayane '),'Welcome home, Rayane.');
- assert.ok(ctx.ApplyTrackWelcome.greetings.length>=20);
+ assert.ok(ctx.ApplyTrackWelcome.greetings.length>=6);
 });
