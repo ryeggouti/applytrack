@@ -10,6 +10,13 @@ $("add").before(headingActions);headingActions.append(researchLaunch,$("add"));
 const editLaunch=button("✦ Find requirements for this college",()=>openResearch(true),"secondary");
 editLaunch.id="research-editor-launch";
 $("college-form").querySelector(".form-intro").after(editLaunch);
+globalThis.syncResearchButton=()=>{
+  const found=$("college-form").dataset.researched==='true';
+  editLaunch.disabled=found;
+  editLaunch.textContent=found?'✓ Requirements already found':'✦ Find requirements for this college';
+  editLaunch.title=found?'Research has already been added to this college. You can edit its details below.':'';
+};
+syncResearchButton();
 function researchStatus(message,error=false){
   const el=$("research-status");el.hidden=false;el.textContent=message;el.className=error?"research-error":"research-info";
   $("research-fallback").hidden=true;
@@ -184,6 +191,7 @@ $("research-apply").addEventListener("click",()=>{
   if(combined.length<=5000)form.elements.notes.value=combined;
   if(plan.reason==='dated')form.elements.round.value=$('research-round').value;
   const filled=globalThis.applyResearchAutofill?.(report,$('research-cycle').value,{skipDeadline:plan.reason==='skipped'});
+  form.dataset.researched='true';syncResearchButton();
   researchDialog.close();form.elements.documents.focus();
   announce("Research added to the editable form. "+(filled?.fee===null?"Fee not established. ":"")+plan.message+" "+(filled?.waiverStatus?"Fee-waiver policy added; review eligibility in notes. ":"")+(filled?.notesOverflow?"Evidence could not fit in notes; reopen research to review sources. ":"Round dates and waiver conditions are in notes. ")+"Review, then save.");
 });

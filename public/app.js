@@ -25,6 +25,9 @@ function validZone(zone) {
   if (typeof zone !== "string" || zone.length > 64) return false;
   try { new Intl.DateTimeFormat("en-US",{timeZone:zone}); return true; } catch { return false; }
 }
+function hasSavedResearch(c) {
+  return c?.researched===true || /^Official-source research · /m.test(c?.notes||'');
+}
 function validate(data) {
   if (!Array.isArray(data) || data.length > 1000) throw new Error("Choose an ApplyTrack backup with up to 1,000 colleges.");
   const ids = new Set();
@@ -46,7 +49,7 @@ function validate(data) {
     if (c.website && !safeWebsite(c.website)) throw new Error("College websites must use https:// or http://.");
     ids.add(c.id);
     return {id:c.id,name:c.name.trim(),status:c.status,round:c.round,waiver:c.waiver,deadline:c.deadline,deadlineTime:c.deadlineTime,deadlineZone:c.deadlineZone||"",
-      notes:c.notes,website:c.website,fee:c.fee,currency:c.currency,documents:c.documents.map(d=>({name:d.name,done:d.done}))};
+      notes:c.notes,website:c.website,fee:c.fee,currency:c.currency,researched:hasSavedResearch(c),documents:c.documents.map(d=>({name:d.name,done:d.done}))};
   });
 }
 function safeWebsite(value) { try { return ["https:","http:"].includes(new URL(value).protocol); } catch { return false; } }
@@ -241,6 +244,8 @@ function render() {
 }
 function edit(c) {
   const form=$("college-form");form.reset();
+  form.dataset.researched=String(hasSavedResearch(c));
+  globalThis.syncResearchButton?.();
   $("dialog-title").textContent=c?"Edit college":"Add a college";
   for(const name of ["id","name","website","deadline","deadlineTime","deadlineZone","fee","currency","round","waiver","status","notes"]) if(c)form.elements[name].value=c[name]??"";
   form.elements.id.value=c?.id||"";
@@ -258,7 +263,7 @@ $("college-form").addEventListener("submit",e=>{
   const available=old?old.documents.slice():[];
   const documents=names.map(name=>{const i=available.findIndex(d=>d.name===name),prior=i>=0?available.splice(i,1)[0]:null;return{name,done:prior?.done||false};});
   const c={id,name:f.get("name").trim(),website:f.get("website").trim(),deadline:f.get("deadline"),deadlineTime:f.get("deadlineTime")||"",deadlineZone:f.get("deadlineZone")||"",
-    fee:f.get("fee")===""?"":Number(f.get("fee")),currency:f.get("currency")||"USD",round:f.get("round"),waiver:f.get("waiver"),status:f.get("status"),notes:f.get("notes").trim(),documents};
+    fee:f.get("fee")===""?"":Number(f.get("fee")),currency:f.get("currency")||"USD",researched:e.currentTarget.dataset.researched==='true',round:f.get("round"),waiver:f.get("waiver"),status:f.get("status"),notes:f.get("notes").trim(),documents};
   try {const [clean]=validate([c]);const next=old?colleges.map(x=>x.id===id?clean:x):[...colleges,clean];if(save(next)){$("editor").close();render();}}catch(error){announce(error.message);}
 });
 $("cancel-delete").addEventListener("click",()=>$("confirm").close());
