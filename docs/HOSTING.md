@@ -1,5 +1,19 @@
 # Hosting
 
+## Primary website: GitHub Pages with Netlify research
+
+Keep using https://ryeggouti.github.io/applytrack/. The Pages build configures
+`https://zesty-quokka-213e5b.netlify.app` as its research API. Netlify runs the
+Node.js functions; no runtime call goes to ChatGPT hosting. Keep the Netlify
+project public so the GitHub website can reach those functions.
+
+Your GitHub-address saved list stays in the same browser storage. No import is
+needed for colleges already saved there. If you added colleges on either other
+address, export that address's backup and import it on GitHub Pages as needed.
+
+Both deployments follow `main`: GitHub Actions publishes the interface, while
+Netlify builds the research functions. Keep the Netlify project connected.
+
 ## Netlify Free (no card required by the advertised plan)
 
 This is the recommended route if Render asks for card verification. The included
@@ -57,10 +71,9 @@ The free service sleeps after 15 idle minutes and can take about one minute to
 wake up. It also has usage limits. See https://render.com/docs/free.
 No database is required: application data stays in browser storage. Keep backups.
 
-The existing GitHub Pages and ChatGPT-hosted copies remain available during the
-move. Their saved lists are separate. The Pages build still points at its existing
-research service; use the new Render URL for the fully independent app. Once the
-new service is verified, the old hosting can be retired separately.
+The existing copies remain available during the move. Their saved lists are
+separate. GitHub Pages now uses Netlify for research, so moving to Render is
+optional. Old hosting can be retired separately after checking backups.
 
 Configuration reference: https://render.com/docs/blueprint-spec.
 
