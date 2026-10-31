@@ -56,8 +56,8 @@ function zoneOffset(zone, ms) {
   return Date.UTC(parts.year,parts.month-1,parts.day,parts.hour%24,parts.minute,parts.second) - Math.floor(ms/1000)*1000;
 }
 function deadlineInstant(c) {
-  if (!c.deadline) return null;
-  const [y,m,d] = c.deadline.split("-").map(Number), [h,mi] = (c.deadlineTime||"23:59").split(":").map(Number);
+  if (!c.deadline || !c.deadlineTime) return null;
+  const [y,m,d] = c.deadline.split("-").map(Number), [h,mi] = c.deadlineTime.split(":").map(Number);
   if (!c.deadlineZone) return new Date(y,m-1,d,h,mi).getTime();
   const guess = Date.UTC(y,m-1,d,h,mi);
   let instant = guess - zoneOffset(c.deadlineZone, guess);
@@ -68,8 +68,17 @@ function deadlineInstant(c) {
 function localDay(ms) { const d=new Date(ms);return Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()); }
 function deadlineState(c, now=Date.now()) {
   const instant = deadlineInstant(c);
-  if (instant === null) return {instant:null,days:null,past:false,label:"",level:""};
-  const past = instant < now, days = Math.round((localDay(instant)-localDay(now))/DAY);
+  if (!c.deadline) return {instant:null,days:null,past:false,label:"",level:""};
+  let days, past;
+  if (instant === null) {
+    // Compare calendar dates only. A selected zone does not establish a cutoff time.
+    const parts = Object.fromEntries(new Intl.DateTimeFormat('en-US',{...(c.deadlineZone?{timeZone:c.deadlineZone}:{}),year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(now)).filter(p=>p.type!=='literal').map(p=>[p.type,+p.value]));
+    days = Math.round((Date.parse(c.deadline+'T00:00:00Z')-Date.UTC(parts.year,parts.month-1,parts.day))/DAY);
+    past = days < 0;
+  } else {
+    past = instant < now;
+    days = Math.round((localDay(instant)-localDay(now))/DAY);
+  }
   let label = "";
   if (past) label = "Past deadline";
   else if (c.deadlineTime && instant-now < 48*3600000) label = "Due in "+Math.max(1,Math.ceil((instant-now)/3600000))+" hours";
@@ -81,7 +90,7 @@ function deadlineState(c, now=Date.now()) {
   return {instant,days,past,label,level};
 }
 function timeLabel(c) {
-  if (!c.deadline || (!c.deadlineTime && !c.deadlineZone)) return "";
+  if (!c.deadline || !c.deadlineTime) return "";
   const instant = deadlineInstant(c), options = {hour:"numeric",minute:"2-digit"};
   if (!c.deadlineZone) return new Date(instant).toLocaleTimeString(undefined,options);
   const there = new Date(instant).toLocaleTimeString(undefined,{...options,timeZone:c.deadlineZone,timeZoneName:"short"});
@@ -92,7 +101,8 @@ function timeLabel(c) {
 }
 function compareByDeadline(a,b) {
   const rank = c => c.status === "Submitted" ? 3 : !c.deadline ? 1 : deadlineState(c).past ? 2 : 0;
-  return rank(a)-rank(b) || (deadlineInstant(a)??Infinity)-(deadlineInstant(b)??Infinity) || a.name.localeCompare(b.name);
+  const order = c => deadlineInstant(c) ?? (c.deadline ? Date.parse(c.deadline+'T12:00:00Z') : Infinity);
+  return rank(a)-rank(b) || order(a)-order(b) || a.name.localeCompare(b.name);
 }
 function upcomingDeadlines(records) {
   return records.filter(c=>c.status!=="Submitted"&&c.deadline&&!deadlineState(c).past).sort(compareByDeadline);
@@ -206,7 +216,7 @@ function render() {
     const track=node("div","track"),fill=node("span");fill.style.width=(c.documents.length?ready/c.documents.length*100:0)+"%";track.append(fill);card.append(track);
     const checks=node("div","documents");
     c.documents.forEach((d,i)=>{
-      const label=node("label","document"),input=node("input");input.type="checkbox";input.checked=d.done;
+      const label=node("label","document"),input=node("input");input.type="checkbox";input.checked=d.done;input.id='application-doc-'+c.id+'-'+i;
       input.addEventListener("change",()=>{const next=structuredClone(colleges);next.find(x=>x.id===c.id).documents[i].done=input.checked;if(save(next))render();else input.checked=!input.checked;});
       label.append(input,documentCaption(d.name));checks.append(label);
     });
@@ -289,3 +299,17 @@ $("import-merge").addEventListener("click",()=>{
   finishImport([...colleges,...additions],"Added "+additions.length+" new college"+(additions.length===1?"":"s")+". Colleges already on your list were left as they are.");
 });
 render();
+// Recalculate clock-dependent views without saving or interrupting an open form.
+function refreshDeadlineViews() {
+  if (document.hidden || document.querySelector('dialog[open]')) return;
+  const focused=document.activeElement, focusId=focused?.id;
+  // Keep expanded requirement explanations through the refresh, too.
+  const openRequirements=[...document.querySelectorAll('.document-context[open]')].map(el=>el.closest('label')?.querySelector('input')?.id).filter(Boolean);
+  render();
+  for(const id of openRequirements){const details=$(id)?.closest('label')?.querySelector('.document-context');if(details)details.open=true;}
+  if(focusId && focused!==document.activeElement)$(focusId)?.focus({preventScroll:true});
+}
+setInterval(refreshDeadlineViews,60000);
+window.addEventListener('focus',refreshDeadlineViews);
+document.addEventListener('visibilitychange',refreshDeadlineViews);
+document.querySelectorAll('dialog').forEach(dialog=>dialog.addEventListener('close',refreshDeadlineViews));
