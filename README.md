@@ -2,6 +2,9 @@
 
 A college application planner with device-local checklists.
 
+**Independent hosting:** Netlify Free can serve the interface and Node.js research
+functions together without ChatGPT hosting. See [the Netlify setup](docs/HOSTING.md#netlify-free-no-card-required-by-the-advertised-plan).
+
 **[Open the GitHub Pages prototype](https://ryeggouti.github.io/applytrack/)**
 
 The public website supports college planning, checklists, backups and automatic

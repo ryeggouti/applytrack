@@ -12,5 +12,5 @@ jobs:
           node-version: '22'
       - run: npm install --ignore-scripts --no-package-lock
       - name: Check script syntax
-        run: for file in server.mjs lib/*.mjs scripts/*.mjs public/*.js; do node --check "$file" || exit 1; done
+        run: for file in server.mjs lib/*.mjs scripts/*.mjs public/*.js netlify/functions/*.mjs; do node --check "$file" || exit 1; done
       - run: node --test

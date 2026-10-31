@@ -1,0 +1,21 @@
+[build]
+  command = "node scripts/build-netlify.mjs"
+  publish = "dist-netlify"
+
+[build.environment]
+  NODE_VERSION = "22"
+  PNPM_VERSION = "11.25.0"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+[[redirects]]
+  from = "/planner"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/planner.html"
+  to = "/index.html"
+  status = 200
