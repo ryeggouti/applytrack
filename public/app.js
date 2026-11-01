@@ -157,7 +157,7 @@ function renderBackupStatus() {
     : "Your list lives only in this browser. Export a backup so you don’t lose it if browser data is cleared.";
 }
 function exportBackup() {
-  const blob=new Blob([JSON.stringify({format:"ApplyTrack",version:4,colleges},null,2)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({format:"ApplyTrack",version:5,colleges},null,2)],{type:"application/json"});
   const a=node("a");const url=URL.createObjectURL(blob);a.href=url;a.download="applytrack-"+today()+".json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
   updateBackupState({lastExport:new Date().toISOString()});renderBackupStatus();
 }
@@ -292,7 +292,7 @@ $("file").addEventListener("change",async e=>{
   try {
     if(file.size>20000000)throw new Error("Choose a backup smaller than 20 MB.");
     const data=JSON.parse(await file.text());
-    if(data.format!=="ApplyTrack"||![1,2,3,4].includes(data.version))throw new Error("This doesn’t look like an ApplyTrack backup.");
+    if(data.format!=="ApplyTrack"||![1,2,3,4,5].includes(data.version))throw new Error("This doesn’t look like an ApplyTrack backup.");
     const imported=validate(data.colleges);
     if(!colleges.length){finishImport(imported,"Imported "+imported.length+" college"+(imported.length===1?"":"s")+".");return;}
     const existingIds=new Set(colleges.map(c=>c.id)),overlap=imported.filter(c=>existingIds.has(c.id)).length;

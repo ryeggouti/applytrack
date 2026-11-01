@@ -30,10 +30,17 @@ $("research-manual").addEventListener("click",()=>{
   researchDialog.close();
   if(!fromEditor){edit();const form=$("college-form");form.elements.name.value=name;if(safeWebsite(url))form.elements.website.value=url;}
 });
+function updateResearchMethod(){
+  const pasted=$('research-method').value==='paste';$('research-paste-fields').hidden=!pasted;$('research-page-text').required=pasted;$('research-page-text').disabled=!pasted;
+  $('research-run').textContent=pasted?'Review pasted text ↗':'Find requirements ↗';
+  const link=$('research-open-source'),url=$('research-url').value.trim();if(safeWebsite(url))link.href=url;else link.removeAttribute('href');
+}
+$('research-method').addEventListener('change',()=>{stopLookup();clearReport();updateResearchMethod();});
+$('research-url').addEventListener('input',updateResearchMethod);
 function stopLookup(){lookupSequence++;lookupController?.abort();lookupController=null;$("research-run").disabled=false;}
 function clearReport(){researchReport=null;$("research-results").hidden=true;$("research-documents").replaceChildren();}
 function openResearch(fromEditor=false){
-  stopLookup();clearReport();$("research-status").hidden=true;$("research-fallback").hidden=true;
+  stopLookup();clearReport();$("research-method").value="fetch";$("research-page-text").value="";updateResearchMethod();$("research-status").hidden=true;$("research-fallback").hidden=true;
   globalThis.ApplyTrackProfile?.applyResearchDefaults?.();
   researchTargetId=fromEditor?$("college-form").elements.id.value:null;
   const form=$("college-form");
@@ -45,7 +52,7 @@ function openResearch(fromEditor=false){
 $("research-close").addEventListener("click",()=>researchDialog.close());
 researchDialog.addEventListener("close",stopLookup);
 researchDialog.addEventListener("cancel",stopLookup);
-for(const id of ["research-url","research-applicant","research-level"])$(id).addEventListener("input",()=>{stopLookup();clearReport();$("research-status").hidden=true;});
+for(const id of ["research-url","research-applicant","research-level","research-page-text"])$(id).addEventListener("input",()=>{stopLookup();clearReport();$("research-status").hidden=true;});
 $("university-search").addEventListener("submit",async e=>{
   e.preventDefault();stopLookup();clearReport();const seq=lookupSequence;
   const submit=e.currentTarget.querySelector("button");submit.disabled=true;
@@ -56,7 +63,7 @@ $("university-search").addEventListener("submit",async e=>{
     const data=await response.json();if(seq!==lookupSequence)return;if(!response.ok)throw new Error(data.error||"University search is unavailable.");
     for(const university of data.universities||[]){
       const match=button("",()=>{
-        stopLookup();clearReport();$("research-url").value=university.url;
+        stopLookup();clearReport();$("research-url").value=university.url;$("research-method").value="fetch";$("research-page-text").value="";updateResearchMethod();
         $("university-query").value=university.name;researchStatus("Selected "+university.name+". Check the address and your applicant type, then choose Find requirements.");
         $("university-matches").replaceChildren();$("research-run").focus();
       },"university-match");
@@ -74,14 +81,16 @@ $("university-search").addEventListener("submit",async e=>{
 $("research-form").addEventListener("submit",async e=>{
   e.preventDefault();stopLookup();clearReport();const seq=lookupSequence;lookupController=new AbortController();
   $("research-run").disabled=true;
-  researchStatus("Reading official admissions pages… This can take about 30 seconds.");
+  const pasted=$('research-method').value==='paste';
+  researchStatus(pasted?'Extracting suggestions from your pasted text…':'Reading official admissions pages… This can take about 30 seconds.');
   const timer=setTimeout(()=>lookupController?.abort(),55000);let response=null;
   try{
     response=await fetch(researchEndpoint("/api/research"),{method:"POST",headers:{"Content-Type":"application/json"},credentials:"omit",signal:lookupController.signal,
-      body:JSON.stringify({url:$("research-url").value.trim(),applicant:$("research-applicant").value,level:$("research-level").value})});
+      body:JSON.stringify({url:$("research-url").value.trim(),applicant:$("research-applicant").value,level:$("research-level").value,...(pasted?{text:$("research-page-text").value}:{})})});
     const data=await response.json();if(seq!==lookupSequence)return;if(!response.ok)throw new Error(data.error||"This university could not be inspected.");
-    researchReport=data;renderResearch(data);
-    researchStatus(data.pages.length?"Read "+data.pages.length+" official pages. Suggestions are ready to review.":"No readable source pages were found. Try a more specific official admissions URL.",!data.pages.length);
+    researchReport=data;if(data.pages.length)renderResearch(data);
+    researchStatus(data.pages.length?(data.acquisition==='pasted'?'Suggestions extracted from your pasted text. The page was not fetched.':'Read '+data.pages.length+' official pages. Review the suggestions; missing items are not evidence that they are unnecessary.'):(data.warnings[0]||'No readable source pages were found.')+' Choose Paste page text to continue.',!data.pages.length);
+    if(!data.pages.length){$('research-method').value='paste';updateResearchMethod();}
   }catch(error){
     if(seq!==lookupSequence)return;
     if(error.name!=="AbortError"&&serviceDown(error,response))researchUnavailable();
@@ -126,7 +135,7 @@ function renderResearch(data){
   $("research-results").hidden=false;
   $("research-coverage").textContent=data.coverage+" Checked "+new Date(data.checkedAt).toLocaleString()+". Profile: "+data.profile.applicant+", "+data.profile.level+".";
   const sources=$("research-sources");sources.replaceChildren();
-  const details=node("details");details.append(node("summary","",data.pages.length+" source pages inspected"));
+  const details=node("details");details.append(node("summary","",data.acquisition==='pasted'?"1 pasted source (not fetched)":data.pages.length+" source "+(data.pages.length===1?"page":"pages")+" inspected"));
   for(const p of data.pages)details.append(sourceLink(p.url,p.title),node("br"));sources.append(details);
   const docs=$("research-documents");docs.replaceChildren();
   if(!data.documents.length)docs.append(node("p","field-help","No document suggestions were extracted. That does not mean this university requires no documents. Use its official checklist."));
@@ -184,15 +193,22 @@ $("research-apply").addEventListener("click",()=>{
   const labels=selected.map(item=>item.label+" — "+item.qualification);
   form.elements.documents.value=[...new Set([...existing,...labels])].join("\n");
   const report=researchReport;
-  const reference=["Official-source research · "+report.profile.applicant+" / "+report.profile.level+" · "+new Date(report.checkedAt).toLocaleDateString(),
+  const reference=["Official-source research · "+(report.acquisition==='pasted'?"Pasted text, not fetched · ":"")+report.profile.applicant+" / "+report.profile.level+" · "+new Date(report.checkedAt).toLocaleDateString(),
     ...[...new Set(report.pages.map(p=>p.url))],
     "Review the original source for conditions, entry year and admission round. Suggestions are not a verified checklist."].join("\n");
   const combined=[form.elements.notes.value.trim(),reference].filter(Boolean).join("\n\n");
-  if(combined.length<=5000)form.elements.notes.value=combined;
+  let sourceNotesOverflow=combined.length>5000;
+  if(!sourceNotesOverflow){
+    form.elements.notes.value=combined;
+    for(const item of selected){
+      const entry='\n\nDocument evidence: '+item.label+' — '+item.quote+' — '+item.url;
+      if(form.elements.notes.value.length+entry.length<=5000)form.elements.notes.value+=entry;else sourceNotesOverflow=true;
+    }
+  }
   if(plan.reason==='dated')form.elements.round.value=$('research-round').value;
   const filled=globalThis.applyResearchAutofill?.(report,$('research-cycle').value,{skipDeadline:plan.reason==='skipped'});
   globalThis.captureDeadlineEvidence?.(report,filled);
   form.dataset.researched='true';syncResearchButton();
   researchDialog.close();form.elements.documents.focus();
-  announce("Research added to the editable form. "+(filled?.fee===null?"Fee not established. ":"")+plan.message+" "+(filled?.waiverStatus?"Fee-waiver policy added; review eligibility in notes. ":"")+(filled?.notesOverflow?"Evidence could not fit in notes; reopen research to review sources. ":"Round dates and waiver conditions are in notes. ")+"Review, then save.");
+  announce("Research added to the editable form. "+(filled?.fee===null?"Fee not established. ":"")+plan.message+" "+(filled?.waiverStatus?"Fee-waiver policy added; review eligibility in notes. ":"")+((filled?.notesOverflow||sourceNotesOverflow)?"Some evidence could not fit in notes; reopen research to review sources. ":"Round dates and waiver conditions are in notes. ")+"Review, then save.");
 });

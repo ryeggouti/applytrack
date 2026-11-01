@@ -140,7 +140,7 @@
     </div>
     <div class="about-grid">
       <article class="about-card"><span class="about-symbol" aria-hidden="true">◉</span><h2>Your list stays with you.</h2><p>There’s no account. Your list is saved in this browser only, so clearing browser data removes it. Export a backup now and then to keep a copy or move to another device.</p><button type="button" class="secondary" id="about-export">Export my backup ↓</button></article>
-      <article class="about-card"><span class="about-symbol" aria-hidden="true">↗</span><h2>A source for every suggestion.</h2><p>Research reads public university pages. Only the university address and your applicant and entry type are sent. Your notes and checklists never leave this browser.</p><a href="https://github.com/ryeggouti/applytrack/blob/main/docs/PRIVACY.md" target="_blank" rel="noopener noreferrer">Read the privacy notes ↗</a></article>
+      <article class="about-card"><span class="about-symbol" aria-hidden="true">↗</span><h2>A source for every suggestion.</h2><p>Research reads public university pages. The university address, applicant and entry type, and any public page text you choose to paste are sent. Your notes and checklists never leave this browser.</p><a href="https://github.com/ryeggouti/applytrack/blob/main/docs/PRIVACY.md" target="_blank" rel="noopener noreferrer">Read the privacy notes ↗</a></article>
     </div>
     <section class="profile-card" aria-labelledby="profile-heading"><div><span class="eyebrow">OPTIONAL</span><h2 id="profile-heading">Your profile</h2><p id="profile-summary">Add your name and application details to personalize greetings and prefill research.</p></div><button type="button" class="secondary" id="edit-profile">Set up my profile</button></section>
     <div class="about-steps"><button type="button" class="secondary" id="replay-tour">Replay the tour ↗</button><h2>How it works</h2><ol><li><strong>Build your list.</strong> Add a college by hand, or research it to pull in requirements from its official pages.</li><li><strong>Check the details.</strong> Confirm the round, deadline, fee and documents against the college’s website.</li><li><strong>Keep moving.</strong> Tick off documents, update each status, and export a backup now and then.</li></ol></div>
@@ -389,12 +389,20 @@ Recommendation"></textarea>
         Use the college’s definition. Citizenship, residence and where you went to school can all change which rules apply.
       </p>
 
+      <label>Research method
+        <select id="research-method"><option value="fetch">Read official pages automatically</option><option value="paste">Paste page text</option></select>
+      </label>
+      <div id="research-paste-fields" hidden>
+        <p class="field-help">If a university blocks automated access, open its admissions page, copy the relevant checklist and paste it here. Keep the official page address above. Only paste public admissions information; this text is sent to the research service for extraction.</p>
+        <a id="research-open-source" target="_blank" rel="noopener noreferrer">Open official page ↗</a>
+        <label>Text from the official page<textarea id="research-page-text" rows="9" minlength="50" maxlength="60000" placeholder="Paste the application checklist, requirements and any relevant conditions…"></textarea></label>
+      </div>
       <button class="primary research-run" id="research-run" type="submit">
         Find requirements ↗
       </button>
 
       <p class="field-help">
-        Only the page address and these two choices are sent. Your notes and checklists stay in this browser.
+        The page address, these two choices, and any text you explicitly paste are sent. Your notes and checklists stay in this browser.
       </p>
     </div>
   </form>

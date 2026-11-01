@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   const model=ApplyTrackPlanning, sections={},lists={},filters={};
-  const copy={tasks:['Small steps. Real progress.','Break applications into manageable tasks with their own dates.'],essays:['Give every draft a place.','Keep prompts, word limits and draft links together. Your writing stays in your document editor.'],recommendations:['A little help, well organized.','Track who you asked, when you asked, and what has arrived.'],funding:['Make room for opportunity.','Scholarship and financial-aid dates have their own place, separate from admission deadlines.']};
+  const copy={tasks:['Small steps. Real progress.','Know what to do next, what needs attention, and which part of each application it moves forward.'],essays:['Give every draft a place.','Keep each college’s prompt, working draft and next revision together. Write here or link to your document.'],recommendations:['A little help, well organized.','Track who you asked, when you asked, and what has arrived.'],funding:['Make room for opportunity.','Scholarship and financial-aid dates have their own place, separate from admission deadlines.']};
   const root=$('planning-views');
   function option(value,label){const o=node('option','',label);o.value=value;return o;}
   function makeView(type,title,description){
@@ -44,6 +44,7 @@
     wrap.append(input);form.append(wrap);inputs[name]=input;labels[name]=wrap;return input;
   }
   field('college','College','select',{required:true});
+  const starter=field('starter','Start with a suggested step (optional)','select');
   field('title','Task','input',{required:true,maxLength:200});
   field('kind','Deadline type','select').append(option('Scholarship','Scholarship'),option('Financial aid','Financial aid'));
   field('person','Recommender name','input',{maxLength:150});
@@ -52,10 +53,32 @@
   field('status','Progress','select');
   field('wordLimit','Word limit (optional)','input',{type:'number',min:'1',max:'100000',step:'1'});
   field('url','Document or official page link (optional)','input',{type:'url',maxLength:1000,placeholder:'https://…'});
+  field('category','Application area','select').append(...model.categories.map(s=>option(s,s)));
+  field('priority','Priority','select').append(...model.priorities.map(s=>option(s,s)));
+  field('nextStep','Next action','textarea',{rows:2,maxLength:1000,placeholder:'What is the next concrete step?'});
+  field('prompt','Official essay prompt','textarea',{rows:4,maxLength:5000,placeholder:'Copy the exact prompt from the college’s official page or application.'});
+  field('draft','Working draft (optional)','textarea',{rows:9,maxLength:30000,placeholder:'Write or paste your draft here. It stays in this browser and travels with your backup.'});
+  const wordFeedback=node('p','field-help essay-word-count');wordFeedback.id='essay-word-feedback';labels.draft.after(wordFeedback);inputs.draft.setAttribute('aria-describedby',wordFeedback.id);
+  function updateWords(){const count=model.wordCount(inputs.draft.value),limit=Number(inputs.wordLimit.value);wordFeedback.textContent=count+' words'+(limit?' / '+limit+' word limit'+(count>limit?' · Over the limit by '+(count-limit):' · '+(limit-count)+' remaining'):' · Add the official word limit if one applies.');wordFeedback.textContent+=' · Check the final count in your application platform.';wordFeedback.classList.toggle('over-limit',!!limit&&count>limit);}
+  inputs.draft.addEventListener('input',updateWords);inputs.wordLimit.addEventListener('input',updateWords);
+  field('revision','Next revision','textarea',{rows:2,maxLength:2000,placeholder:'For example: replace the opening with a specific scene, then ask for feedback.'});
   field('notes','Notes','textarea',{rows:5,maxLength:5000});
   const error=node('p','research-error');error.hidden=true;error.setAttribute('role','alert');form.append(error);
   const actions=node('div','form-actions');actions.append(button('Cancel',()=>dialog.close(),'text-btn'));const submit=node('button','primary','Save');submit.type='submit';actions.append(submit);form.append(actions);dialog.append(form);document.body.append(dialog);
   let editing=null;
+  const taskStarters=[
+    ['Request an official transcript','Documents','Check the college’s transcript instructions, then ask the school office to send it through the required channel.'],
+    ['Ask a teacher for a recommendation','Documents','Confirm the required recommendation type, ask the teacher, and agree on a date.'],
+    ['Check the applicant portal','Portal follow-up','Open the college’s portal and compare received items with its checklist.'],
+    ['Review the application before submitting','Application','Check the selected round, personal details, supplements, fee or waiver and required uploads.'],
+    ['Check application fee-waiver eligibility','Financial aid','Read the official waiver policy and note the steps that apply to you.']
+  ];
+  starter.addEventListener('change',()=>{
+    if(!starter.value)return;
+    if(editing.type==='tasks'){const [title,category,nextStep]=taskStarters[Number(starter.value)];inputs.title.value=title;inputs.category.value=category;inputs.nextStep.value=nextStep;}
+    else inputs.title.value=starter.value;
+    inputs.title.focus();
+  });
   function open(type,collegeId='',itemId=''){
     if(!colleges.length){announce('Add a college first, then create its tasks, essays and other plans.');location.hash='applications';$('add').focus();return;}
     const item=colleges.find(c=>c.id===collegeId)?.planning?.[type]?.find(i=>i.id===itemId);
@@ -64,17 +87,24 @@
     heading.textContent=(item?'Edit ':'Add ')+model.types[type].singular;
     // Change the text node only, preserving its associated input.
     labels.title.firstChild.textContent={tasks:'Task',essays:'Essay title or prompt',recommendations:'Recommendation / role',funding:'Scholarship or aid program'}[type];
-    labels.notes.firstChild.textContent=type==='essays'?'Full prompt and notes':'Notes';
+    labels.notes.firstChild.textContent=type==='essays'?'Existing prompt / additional notes':'Notes';
+    wordFeedback.hidden=type!=='essays';
+    labels.starter.hidden=!!item||!['tasks','essays'].includes(type);
+    starter.replaceChildren(option('','Choose a starting point…'),...(type==='tasks'?taskStarters.map((s,i)=>option(String(i),s[0])):['Personal statement','College writing supplement','Short response'].map(s=>option(s,s))));
+    for(const name of ['category','priority','nextStep','prompt','draft','revision'])labels[name].hidden=type==='tasks'?!['category','priority','nextStep'].includes(name):type==='essays'?!['prompt','draft','revision'].includes(name):true;
+    inputs.category.value='Application';inputs.priority.value='Normal';
+    inputs.title.placeholder=type==='tasks'?'e.g. Ask my counselor to send the school report':type==='essays'?'e.g. Amherst writing supplement':'';
     inputs.status.replaceChildren(...model.types[type].states.map(s=>option(s,s)));
     for(const name of ['kind','person','askedOn','wordLimit'])labels[name].hidden=!(name==='kind'?type==='funding':name==='wordLimit'?type==='essays':type==='recommendations');
-    if(item)for(const name of ['title','date','status','notes','url','person','askedOn','wordLimit','kind'])inputs[name].value=item[name];
+    if(item)for(const name of ['title','date','status','notes','url','person','askedOn','wordLimit','kind','category','priority','nextStep','prompt','draft','revision'])inputs[name].value=item[name]??'';
+    updateWords();
     globalThis.markFormClean?.(form);dialog.showModal();inputs.title.focus();
   }
   function persist(next){try{const clean=validate(next);if(!save(clean)){error.textContent=$('notice').querySelector('span')?.textContent||'This change could not be saved. Export a backup and check browser storage.';error.hidden=false;return false;}render();return true;}catch(e){error.textContent=e.message;error.hidden=false;return false;}}
   form.addEventListener('submit',event=>{
     event.preventDefault();const {type,collegeId,itemId}=editing,next=structuredClone(colleges),college=next.find(c=>c.id===(itemId?collegeId:inputs.college.value));
     if(!college){error.textContent='This college no longer exists. Close and reopen this form.';error.hidden=false;return;}
-    const item={id:itemId||crypto.randomUUID(),title:inputs.title.value.trim(),date:inputs.date.value,status:inputs.status.value,notes:inputs.notes.value.trim(),url:inputs.url.value.trim(),person:inputs.person.value.trim(),askedOn:inputs.askedOn.value,wordLimit:inputs.wordLimit.value===''?'':Number(inputs.wordLimit.value),kind:inputs.kind.value||'Scholarship'};
+    const item={id:itemId||crypto.randomUUID(),title:inputs.title.value.trim(),date:inputs.date.value,status:inputs.status.value,notes:inputs.notes.value.trim(),url:inputs.url.value.trim(),person:inputs.person.value.trim(),askedOn:inputs.askedOn.value,wordLimit:inputs.wordLimit.value===''?'':Number(inputs.wordLimit.value),kind:inputs.kind.value||'Scholarship',category:inputs.category.value||'Application',priority:inputs.priority.value||'Normal',nextStep:inputs.nextStep.value.trim(),prompt:inputs.prompt.value.trim(),draft:inputs.draft.value,revision:inputs.revision.value.trim()};
     college.planning=model.clean(college.planning);const index=college.planning[type].findIndex(i=>i.id===itemId);
     if(itemId&&index<0){error.textContent='This item no longer exists. Close and reopen this form.';error.hidden=false;return;}
     if(index<0)college.planning[type].push(item);else college.planning[type][index]=item;
@@ -99,10 +129,19 @@
     const meta=node('div','planning-meta');
     if(item.date)meta.append(node('span',item.date<today()&&!model.complete(type==='admissions'?'tasks':type,item.status)?'due':'',dateLabel(item.date)+(item.date<today()?' · Past date':'')));else meta.append(node('span','','No date set'));
     if(type==='recommendations'){if(item.person)meta.append(node('span','','Recommender: '+item.person));if(item.askedOn)meta.append(node('span','','Requested '+dateLabel(item.askedOn)));}
-    if(type==='essays'&&item.wordLimit)meta.append(node('span','',item.wordLimit+' words max'));
+    if(type==='tasks')meta.append(node('span','',item.category||'Application'),node('span',item.priority==='High'?'due':'',(item.priority||'Normal')+' priority'));
+    if(type==='essays')meta.append(node('span',item.wordLimit&&model.wordCount(item.draft||'')>item.wordLimit?'due':'',(item.draft?model.wordCount(item.draft)+' words':'No local draft')+(item.wordLimit?' / '+item.wordLimit+' words max':'')));
+    card.append(meta);
+    if(type==='tasks'&&item.nextStep)card.append(node('p','planning-next','Next: '+item.nextStep));
+    if(type==='essays'&&item.revision)card.append(node('p','planning-next','Next revision: '+item.revision));
+    if(!compact&&type==='essays'&&(item.prompt||item.draft)){
+      const detail=node('details','planning-notes');detail.id='planning-writing-'+college.id+'-'+item.id;detail.append(node('summary','','Prompt & working draft'));
+      if(item.prompt)detail.append(node('h3','','Official prompt'),node('p','',item.prompt));
+      if(item.draft)detail.append(node('h3','','Working draft'),node('p','essay-draft',item.draft));card.append(detail);
+    }
     if(compact)meta.append(node('span','',model.types[type]?.label||'Admissions'));
-    card.append(meta);if(type==='admissions')globalThis.appendDeadlineTrust?.(card,college);
-    if(!compact&&item.notes){const details=node('details','planning-notes');details.id='planning-notes-'+college.id+'-'+type+'-'+item.id;details.append(node('summary','',type==='essays'?'Prompt & notes':'Notes'),node('p','',item.notes));card.append(details);}
+    if(type==='admissions')globalThis.appendDeadlineTrust?.(card,college);
+    if(!compact&&item.notes){const details=node('details','planning-notes');details.id='planning-notes-'+college.id+'-'+type+'-'+item.id;details.append(node('summary','',type==='essays'?'Additional notes':'Notes'),node('p','',item.notes));card.append(details);}
     const bottom=node('div','planning-actions');
     if(item.url){const link=node('a','planning-link',type==='essays'?'Open draft / source ↗':'Open link ↗');link.href=item.url;link.target='_blank';link.rel='noopener noreferrer';bottom.append(link);}
     if(type==='tasks'&&!compact){const label=node('label','task-complete'),check=node('input');check.id='planning-check-'+college.id+'-'+item.id;check.type='checkbox';check.checked=item.status==='Done';check.setAttribute('aria-label','Mark '+item.title+' done');check.addEventListener('change',()=>{const next=structuredClone(colleges);next.find(c=>c.id===college.id).planning.tasks.find(i=>i.id===item.id).status=check.checked?'Done':'Not started';if(!persist(next))check.checked=!check.checked;});label.append(check,node('span','','Done'));bottom.append(label);}
@@ -117,7 +156,7 @@
       const {college,state,query}=filters[type],previous=college.value;college.replaceChildren(option('','All colleges'),...records.map(c=>option(c.id,c.name)));college.value=records.some(c=>c.id===previous)?previous:'';
       const relevant=rows.filter(r=>r.type===type&&(!college.value||r.college.id===college.value)),done=relevant.filter(r=>model.complete(type,r.item.status)).length;
       lists[type].summary.textContent=relevant.length+' '+(relevant.length===1?definition.singular:(type==='funding'?'funding deadlines':definition.label.toLowerCase()))+' · '+done+' ready / completed';
-      const visible=relevant.filter(r=>(state.value==='all'||model.complete(type,r.item.status)===(state.value==='complete'))&&[r.item.title,r.item.notes,r.item.person,r.college.name].join(' ').toLocaleLowerCase().includes(query.value.trim().toLocaleLowerCase())).sort((a,b)=>(a.item.date||'9999').localeCompare(b.item.date||'9999')||a.item.title.localeCompare(b.item.title));
+      const visible=relevant.filter(r=>(state.value==='all'||model.complete(type,r.item.status)===(state.value==='complete'))&&[r.item.title,r.item.notes,r.item.person,r.item.nextStep,r.item.prompt,r.item.draft,r.item.revision,r.item.category,r.college.name].join(' ').toLocaleLowerCase().includes(query.value.trim().toLocaleLowerCase())).sort((a,b)=>(a.item.date||'9999').localeCompare(b.item.date||'9999')||a.item.title.localeCompare(b.item.title));
       if(query.value.trim())lists[type].summary.textContent=visible.length+' matching · '+relevant.length+' total';
       lists[type].list.replaceChildren();
       if(!visible.length)empty(lists[type].list,relevant.length?'Nothing in this view.':'Your '+definition.label.toLowerCase()+' start here.',relevant.length?'Try another search, college or progress filter.':'Add '+(type==='essays'?'an ':'a ')+definition.singular+' and give your next step a little structure.',button('+ Add '+definition.singular,()=>open(type,college.value),'secondary'));

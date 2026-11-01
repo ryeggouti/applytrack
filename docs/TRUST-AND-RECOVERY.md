@@ -55,8 +55,8 @@ and college name without changing data. Calendar help is expandable.
 
 ## Compatibility and checks
 
-Backups now use version 4 to retain deadline-review metadata; versions 1–3 remain
-supported. Old app versions reject version 4 instead of dropping fields silently.
+Backups now use version 5 to retain deadline-review metadata; versions 1–4 remain
+supported. Old app versions reject version 5 instead of dropping fields silently.
 Automated tests cover confirmation invalidation, metadata validation, stale-tab
 saves, recovery retention and quota failure. Browser checks cover deletion and
 restoration with linked work, list replacement recovery, draft keep/discard,
