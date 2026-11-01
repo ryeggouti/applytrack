@@ -10,9 +10,10 @@ $("add").before(headingActions);headingActions.append(researchLaunch,$("add"));
 const editLaunch=button("✦ Find requirements for this college",()=>openResearch(true),"secondary");
 editLaunch.id="research-editor-launch";
 $("college-form").querySelector(".form-intro").after(editLaunch);
+const refreshLaunch=button('Check sources again',()=>openResearch(true),'text-btn');refreshLaunch.id='research-refresh';editLaunch.after(refreshLaunch);
 globalThis.syncResearchButton=()=>{
   const found=$("college-form").dataset.researched==='true';
-  editLaunch.disabled=found;
+  editLaunch.disabled=found;refreshLaunch.hidden=!found;
   editLaunch.textContent=found?'✓ Requirements already found':'✦ Find requirements for this college';
   editLaunch.title=found?'Research has already been added to this college. You can edit its details below.':'';
 };
@@ -88,9 +89,10 @@ $("research-form").addEventListener("submit",async e=>{
     response=await fetch(researchEndpoint("/api/research"),{method:"POST",headers:{"Content-Type":"application/json"},credentials:"omit",signal:lookupController.signal,
       body:JSON.stringify({url:$("research-url").value.trim(),applicant:$("research-applicant").value,level:$("research-level").value,...(pasted?{text:$("research-page-text").value}:{})})});
     const data=await response.json();if(seq!==lookupSequence)return;if(!response.ok)throw new Error(data.error||"This university could not be inspected.");
-    researchReport=data;if(data.pages.length)renderResearch(data);
+    researchReport=data;renderResearch(data);
     researchStatus(data.pages.length?(data.acquisition==='pasted'?'Suggestions extracted from your pasted text. The page was not fetched.':'Read '+data.pages.length+' official pages. Review the suggestions; missing items are not evidence that they are unnecessary.'):(data.warnings[0]||'No readable source pages were found.')+' Choose Paste page text to continue.',!data.pages.length);
     if(!data.pages.length){$('research-method').value='paste';updateResearchMethod();}
+    verificationPanel.scrollIntoView({block:'start'});
   }catch(error){
     if(seq!==lookupSequence)return;
     if(error.name!=="AbortError"&&serviceDown(error,response))researchUnavailable();
@@ -105,9 +107,12 @@ function sourceLink(url,title){
 function evidenceCard(item,selectable,index){
   const card=node("div","evidence");
   if(selectable){
-    const label=node("label","evidence-choice"),input=node("input");input.type="checkbox";input.value=index;input.dataset.researchIndex=index;
+    const label=node("label","evidence-choice"),input=node("input");input.type="checkbox";input.value=index;input.dataset.researchIndex=index;input.disabled=/^Not offered/.test(item.qualification);input.dataset.researchScope=item.scope||"admission";input.dataset.researchStrength=/^Mentioned|^Mixed/.test(item.qualification)?"uncertain":"supported";
     label.append(input,node("strong","",item.label));card.append(label,node("span","evidence-tag",item.qualification));
   }
+  if(researchReport?.acquisition==='reference')card.append(node('span','evidence-tag','Dated reference summary — not live verified'));
+  if(item.qualification==='Mentioned — verify applicability')card.append(node('p','field-help','Mention only: this excerpt does not establish a requirement.'));
+  if(item.scope==='financial-aid')card.append(node("p","field-help","Financial-aid source: these instructions may apply only if you seek aid. They do not establish an admission requirement."));
   if(item.section)card.append(node("small","evidence-section",item.section));
   card.append(node("blockquote","",item.quote),sourceLink(item.url,"Read source ↗"));
   if(item.additionalEvidence?.length){
@@ -130,22 +135,54 @@ function previewResearchDeadline(){
   const source=$('research-deadline-source');source.replaceChildren();
   if(plan.match)source.append(sourceLink(plan.match.url,'Official deadline source ↗'));
 }
-for(const id of ['research-cycle','research-round','research-skip-deadline'])$(id).addEventListener('input',previewResearchDeadline);
+for(const id of ['research-cycle','research-round','research-skip-deadline'])$(id).addEventListener('input',()=>{previewResearchDeadline();if(researchReport)renderResearchVerification(researchReport);});
+const verificationPanel=node('section','research-verification');verificationPanel.id='research-verification';$('research-coverage').after(verificationPanel);
+function renderResearchVerification(data){
+  verificationPanel.replaceChildren();verificationPanel.append(node('h4','','What still needs checking'));
+  const extracted=ApplyTrackResearch.extract(data,$('research-cycle').value);
+  const missing=[];
+  if(extracted.fee===null)missing.push('Application fee: no unambiguous supported amount established.');
+  if(!extracted.waiverStatus)missing.push('Fee waiver: availability or eligibility not established.');else missing.push('Fee waiver: your personal eligibility has not been determined.');
+  if(!extracted.deadlines.length)missing.push('Admission deadline: not established for a round and year.');
+  if(extracted.deadlines.length)missing.push('Only the admission rounds and years shown in the evidence are covered; other rounds remain unverified.');
+  if(extracted.conflicts?.length)missing.push('Conflicting dates: '+extracted.conflicts.join(', ')+'. Review the originals.');
+  if(data.acquisition==='reference')missing.unshift('Live verification failed. These are saved reference summaries from '+data.checkedAt+'; current instructions remain unverified.');
+  if(data.acquisition==='pasted')missing.unshift('Pasted text has not been authenticated or fetched. Check it against the original page.');
+  const list=node('ul');for(const item of missing)list.append(node('li','',item));verificationPanel.append(list);
+  const checks=data.verification||[],notFound=checks.filter(c=>c.status==='not-found'),uncertain=checks.filter(c=>['mention','conflicting'].includes(c.status));
+  if(notFound.length)verificationPanel.append(node('p','field-help','Not established in these sources: '+notFound.map(c=>c.topic).join(', ')+'. Missing evidence does not mean these are requirements—or that they are unnecessary.'));
+  if(uncertain.length)verificationPanel.append(node('p','field-help','Only mentions or mixed conditions: '+uncertain.map(c=>c.topic).join(', ')+'.'));
+  verificationPanel.append(node('p','field-help','Financial-aid applications, major-specific supplements, personal waiver eligibility and your final portal checklist need separate review. This is not a completeness check.'));
+  if(checks.length){const detail=node('details');detail.append(node('summary','','Coverage by topic'));const labels={'explicit':'Instruction located','conditional':'Conditions to review','policy':'Policy located','mention':'Mention only','conflicting':'Mixed conditions','not-found':'Not established'};for(const check of checks){const row=node('div','research-coverage-row');row.append(node('strong','',check.topic),node('span','',labels[check.status]||check.status),node('p','field-help',check.detail));if(check.sources[0])row.append(sourceLink(check.sources[0],'Review source ↗'));detail.append(row);}verificationPanel.append(detail);}
+  const scan=data.scan;if(scan){
+    verificationPanel.append(node('p','field-help','Live scan: '+scan.read+' pages read; '+scan.failures.length+' failed. '+(scan.stopped==='finished'?(scan.read?'This scan has finished; other pages may still contain requirements.':'The starting source could not be read; live requirements remain unverified.'):'Stopped at the '+scan.stopped.replaceAll('-',' ')+'. More pages may contain requirements.')));
+    if(scan.failures.length){const failures=node('details');failures.open=!scan.read;failures.append(node('summary','','Pages that could not be checked'));for(const item of scan.failures){const row=node('div','research-coverage-row');row.append(sourceLink(item.url,item.url),node('p','field-help',item.message));failures.append(row);}verificationPanel.append(failures);}
+    if(scan.followUp.length){const follow=node('details');follow.append(node('summary','','Official pages still needing review'));for(const item of scan.followUp)follow.append(sourceLink(item.url,item.text||item.url),node('p','field-help',item.reason));verificationPanel.append(follow);}
+  }
+  if(data.reference){const box=node('div','research-reference');box.append(node('strong','','Amherst: dated official-source guide'),node('p','field-help','The live lookup was incomplete. A saved guide reviewed '+data.reference.checkedAt+' for '+data.reference.referenceCycle+' is available. It contains document summaries only; fee and deadlines are deliberately left unverified.'));
+    box.append(button('Review dated Amherst guide',()=>{researchReport={...data.reference,scan:data.scan};renderResearch(researchReport);researchStatus('Showing a saved Amherst reference, not a successful live lookup. Check current official instructions before saving.');},'secondary'));verificationPanel.prepend(box);
+  }
+}
+
 function renderResearch(data){
   $("research-results").hidden=false;
-  $("research-coverage").textContent=data.coverage+" Checked "+new Date(data.checkedAt).toLocaleString()+". Profile: "+data.profile.applicant+", "+data.profile.level+".";
+  $('research-coverage').textContent=data.coverage+' '+(data.acquisition==='reference'?'Reference reviewed '+data.checkedAt:'Lookup '+new Date(data.checkedAt).toLocaleString())+'. Profile: '+data.profile.applicant+', '+data.profile.level+'.';
+  renderResearchVerification(data);
   const sources=$("research-sources");sources.replaceChildren();
-  const details=node("details");details.append(node("summary","",data.acquisition==='pasted'?"1 pasted source (not fetched)":data.pages.length+" source "+(data.pages.length===1?"page":"pages")+" inspected"));
+  const details=node("details");details.append(node("summary","",data.acquisition==='reference'?"Saved reference sources (not fetched by this lookup)":data.acquisition==='pasted'?"1 pasted source (not fetched)":data.pages.length+" source "+(data.pages.length===1?"page":"pages")+" inspected"));
   for(const p of data.pages)details.append(sourceLink(p.url,p.title),node("br"));sources.append(details);
   const docs=$("research-documents");docs.replaceChildren();
   if(!data.documents.length)docs.append(node("p","field-help","No document suggestions were extracted. That does not mean this university requires no documents. Use its official checklist."));
-  data.documents.forEach((item,i)=>docs.append(evidenceCard(item,true,i)));
+  let previousGroup='';
+  const entries=data.documents.map((item,i)=>({item,i,group:item.scope==='financial-aid'?'Financial aid — separate eligibility review':/^Mentioned|^Mixed/.test(item.qualification)?'Mentions and mixed conditions — investigate':/^Not offered/.test(item.qualification)?'Unavailable or excluded options':'Instructions and policies located'})).sort((a,b)=>['Instructions and policies located','Mentions and mixed conditions — investigate','Financial aid — separate eligibility review','Unavailable or excluded options'].indexOf(a.group)-['Instructions and policies located','Mentions and mixed conditions — investigate','Financial aid — separate eligibility review','Unavailable or excluded options'].indexOf(b.group));
+  for(const {item,i,group} of entries){if(group!==previousGroup){docs.append(node('h4','',group));previousGroup=group;}docs.append(evidenceCard(item,true,i));}
   if(data.documents.length){
     const label=node("label","evidence-choice"),selectAll=node("input");
     selectAll.type="checkbox";
-    label.append(selectAll,node("strong","","Select all documents"));
+    label.append(selectAll,node("strong","","Select admissions instructions and policies"));
     docs.prepend(label);
-    const choices=[...docs.querySelectorAll("input[data-research-index]")];
+    const choices=[...docs.querySelectorAll("input[data-research-index]:not(:disabled):not([data-research-scope=financial-aid]):not([data-research-strength=uncertain])")];
+    selectAll.disabled=!choices.length;
     selectAll.addEventListener("change",()=>{
       choices.forEach(input=>{input.checked=selectAll.checked;});
       selectAll.indeterminate=false;
@@ -190,18 +227,24 @@ $("research-apply").addEventListener("click",()=>{
   if(!wasEditing){edit();form.elements.name.value=$("university-query").value.trim();form.elements.website.value=$("research-url").value.trim();}
   else if(form.elements.id.value!==researchTargetId){researchStatus("The college form changed. Close research and reopen it for that college.",true);return;}
   const existing=form.elements.documents.value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
-  const labels=selected.map(item=>item.label+" — "+item.qualification);
-  form.elements.documents.value=[...new Set([...existing,...labels])].join("\n");
-  const report=researchReport;
-  const reference=["Official-source research · "+(report.acquisition==='pasted'?"Pasted text, not fetched · ":"")+report.profile.applicant+" / "+report.profile.level+" · "+new Date(report.checkedAt).toLocaleDateString(),
+  const labels=selected.map(item=>(item.scope==='financial-aid'?'Financial aid: ':'')+item.label+" — "+item.qualification);
+  const baseName=value=>value.split(' — ')[0].trim().toLocaleLowerCase();const known=new Set(existing.map(baseName));
+  form.elements.documents.value=[...existing,...labels.filter(label=>{const key=baseName(label);if(known.has(key))return false;known.add(key);return true;})].join('\n');
+  const report=researchReport,evidence=ApplyTrackResearch.extract(report,$('research-cycle').value);
+  const reference=["Official-source research · "+(report.acquisition==='reference'?"Saved reference, not live verified · ":report.acquisition==='pasted'?"Pasted text, not fetched · ":"")+report.profile.applicant+" / "+report.profile.level+" · "+new Date(report.checkedAt).toLocaleDateString(),
     ...[...new Set(report.pages.map(p=>p.url))],
-    "Review the original source for conditions, entry year and admission round. Suggestions are not a verified checklist."].join("\n");
-  const combined=[form.elements.notes.value.trim(),reference].filter(Boolean).join("\n\n");
+    "Review the original source for conditions, entry year and admission round. Suggestions are not a verified checklist.",
+    "Still unverified: "+[evidence.fee===null?"application fee":"",!evidence.deadlines.length?"admission deadline / year":"","personal fee-waiver eligibility"].filter(Boolean).join(", "),
+    ...(report.verification?.some(c=>["not-found","mention","conflicting"].includes(c.status))?["Not established or unclear: "+report.verification.filter(c=>["not-found","mention","conflicting"].includes(c.status)).map(c=>c.topic).join(", ")]:[]),
+    ...(report.scan?.failures.length?["Live pages not checked: "+report.scan.failures.map(f=>f.url).join(", ")]:[])].join("\n");
+  const previousNotes=form.elements.notes.value.trim();
+  const combined=previousNotes.includes(reference)?previousNotes:[previousNotes,reference].filter(Boolean).join("\n\n");
   let sourceNotesOverflow=combined.length>5000;
   if(!sourceNotesOverflow){
     form.elements.notes.value=combined;
     for(const item of selected){
       const entry='\n\nDocument evidence: '+item.label+' — '+item.quote+' — '+item.url;
+      if(form.elements.notes.value.includes(entry.trim()))continue;
       if(form.elements.notes.value.length+entry.length<=5000)form.elements.notes.value+=entry;else sourceNotesOverflow=true;
     }
   }
@@ -210,5 +253,5 @@ $("research-apply").addEventListener("click",()=>{
   globalThis.captureDeadlineEvidence?.(report,filled);
   form.dataset.researched='true';syncResearchButton();
   researchDialog.close();form.elements.documents.focus();
-  announce("Research added to the editable form. "+(filled?.fee===null?"Fee not established. ":"")+plan.message+" "+(filled?.waiverStatus?"Fee-waiver policy added; review eligibility in notes. ":"")+((filled?.notesOverflow||sourceNotesOverflow)?"Some evidence could not fit in notes; reopen research to review sources. ":"Round dates and waiver conditions are in notes. ")+"Review, then save.");
+  announce("Research added to the editable form. "+(filled?.fee===null?"Fee not established. ":"")+plan.message+" "+(filled?.waiverStatus?"Fee-waiver policy added; review eligibility in notes. ":"")+((filled?.notesOverflow||sourceNotesOverflow)?"Some evidence could not fit in notes; reopen research to review sources. ":"Source evidence is in notes where available; missing details still need review. ")+"Review, then save.");
 });

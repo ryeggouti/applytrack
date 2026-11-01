@@ -24,7 +24,7 @@
     const round=form.elements.round.value;
     const match=result.deadlines.find(d=>d.date===form.elements.deadline.value&&(d.round===round||(round==='Early action'&&d.round==='Restrictive early action')||(round==='Early decision'&&d.round==='Early decision I')));
     if(!match)return;
-    draft={...model.clean(),origin:report.acquisition==='pasted'?'manual':'research',url:match.url,fetchedAt:report.acquisition!=='pasted'&&Number.isFinite(Date.parse(report.checkedAt))?report.checkedAt:''};source.value=draft.url;check.checked=false;reviewStatus.textContent='Research suggestion. Open the source and check the date, year and admission round before confirming.';
+    draft={...model.clean(),origin:report.acquisition&&report.acquisition!=='fetched'?'manual':'research',url:match.url,fetchedAt:(!report.acquisition||report.acquisition==='fetched')&&Number.isFinite(Date.parse(report.checkedAt))?report.checkedAt:''};source.value=draft.url;check.checked=false;reviewStatus.textContent='Research suggestion. Open the source and check the date, year and admission round before confirming.';
   }
   globalThis.captureDeadlineEvidence=(report,result)=>{researchEvidence={report,result};capture(report,result);};
   for(const name of ['name','website','deadline','round','deadlineTime','deadlineZone'])form.elements[name].addEventListener('input',()=>{check.checked=false;draft={...draft,origin:'manual',fetchedAt:'',confirmedAt:'',confirmedFor:''};reviewStatus.textContent='Details changed. Check the source again before confirming.';});
