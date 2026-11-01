@@ -109,8 +109,8 @@ function evidenceCard(item,selectable,index){
   if(selectable){
     const label=node("label","evidence-choice"),input=node("input");input.type="checkbox";input.value=index;input.dataset.researchIndex=index;input.disabled=/^Not offered/.test(item.qualification);input.dataset.researchScope=item.scope||"admission";input.dataset.researchStrength=/^Mentioned|^Mixed/.test(item.qualification)?"uncertain":"supported";
     label.append(input,node("strong","",item.label));card.append(label,node("span","evidence-tag",item.qualification));
-  }
-  if(researchReport?.acquisition==='reference')card.append(node('span','evidence-tag','Dated reference summary — not live verified'));
+  }else if(item.kind==='document')card.append(node('strong','',item.label),node('span','evidence-tag',item.qualification));
+  if(item.evidenceType==='reviewed-summary')card.append(node('span','evidence-tag','Dated reference summary — not live verified'));
   if(item.qualification==='Mentioned — verify applicability')card.append(node('p','field-help','Mention only: this excerpt does not establish a requirement.'));
   if(item.scope==='financial-aid')card.append(node("p","field-help","Financial-aid source: these instructions may apply only if you seek aid. They do not establish an admission requirement."));
   if(item.section)card.append(node("small","evidence-section",item.section));
@@ -149,6 +149,8 @@ function renderResearchVerification(data){
   if(data.acquisition==='reference')missing.unshift('Live verification failed. These are saved reference summaries from '+data.checkedAt+'; current instructions remain unverified.');
   if(data.acquisition==='pasted')missing.unshift('Pasted text has not been authenticated or fetched. Check it against the original page.');
   const list=node('ul');for(const item of missing)list.append(node('li','',item));verificationPanel.append(list);
+  if(data.alternativeSources?.length)verificationPanel.append(node('p','field-help','Alternative official Amherst sources were checked automatically because the starting page could not be read. Quick Pass covers fee-waiver instructions only. The general Amherst document checklist remains unverified by this live lookup.'));
+  if(data.pages.some(p=>p.scope==='questbridge')||data.pathways?.length)verificationPanel.append(node('p','field-help','QuestBridge-only instructions are shown separately below. They do not verify the general application checklist and are excluded from document selection, fee and deadline autofill.'));
   const checks=data.verification||[],notFound=checks.filter(c=>c.status==='not-found'),uncertain=checks.filter(c=>['mention','conflicting'].includes(c.status));
   if(notFound.length)verificationPanel.append(node('p','field-help','Not established in these sources: '+notFound.map(c=>c.topic).join(', ')+'. Missing evidence does not mean these are requirements—or that they are unnecessary.'));
   if(uncertain.length)verificationPanel.append(node('p','field-help','Only mentions or mixed conditions: '+uncertain.map(c=>c.topic).join(', ')+'.'));
@@ -160,7 +162,17 @@ function renderResearchVerification(data){
     if(scan.followUp.length){const follow=node('details');follow.append(node('summary','','Official pages still needing review'));for(const item of scan.followUp)follow.append(sourceLink(item.url,item.text||item.url),node('p','field-help',item.reason));verificationPanel.append(follow);}
   }
   if(data.reference){const box=node('div','research-reference');box.append(node('strong','','Amherst: dated official-source guide'),node('p','field-help','The live lookup was incomplete. A saved guide reviewed '+data.reference.checkedAt+' for '+data.reference.referenceCycle+' is available. It contains document summaries only; fee and deadlines are deliberately left unverified.'));
-    box.append(button('Review dated Amherst guide',()=>{researchReport={...data.reference,scan:data.scan};renderResearch(researchReport);researchStatus('Showing a saved Amherst reference, not a successful live lookup. Check current official instructions before saving.');},'secondary'));verificationPanel.prepend(box);
+    box.append(button('Review dated Amherst guide',()=>{researchReport={...data.reference,scan:data.scan,pathways:data.pathways};renderResearch(researchReport);researchStatus('Showing a saved Amherst reference, not a successful live lookup. Check current official instructions before saving.');},'secondary'));if(data.pages.length)verificationPanel.append(box);else verificationPanel.prepend(box);
+  }
+  for(const pathway of data.pathways||[]){
+    const separate=node('details','research-reference');separate.append(node('summary','',pathway.label));
+    separate.append(node('p','field-help','Fetched from official pages during this lookup. These instructions concern QuestBridge applicants, not the general Common App / Coalition checklist. They are not added to your college form. Check the pathway, cycle and conditions on the original source.'));
+    for(const p of pathway.pages)separate.append(sourceLink(p.url,p.title));
+    const dates=pathway.deadlines.filter(item=>/\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\.?\s+\d{1,2}\b|\b20\d{2}-\d{2}-\d{2}\b/i.test(item.quote));
+    for(const [label,items] of [['Document and policy excerpts',pathway.documents],['QuestBridge dates — not general admission deadlines',dates],['QuestBridge fee information',pathway.fees]]){
+      if(!items.length)continue;separate.append(node('h4','',label));for(const item of items)separate.append(evidenceCard(item,false));
+    }
+    verificationPanel.append(separate);
   }
 }
 
@@ -170,7 +182,7 @@ function renderResearch(data){
   renderResearchVerification(data);
   const sources=$("research-sources");sources.replaceChildren();
   const details=node("details");details.append(node("summary","",data.acquisition==='reference'?"Saved reference sources (not fetched by this lookup)":data.acquisition==='pasted'?"1 pasted source (not fetched)":data.pages.length+" source "+(data.pages.length===1?"page":"pages")+" inspected"));
-  for(const p of data.pages)details.append(sourceLink(p.url,p.title),node("br"));sources.append(details);
+  for(const p of data.pages)details.append(sourceLink(p.url,(p.scope==='questbridge'?'QuestBridge only: ':'')+p.title),node("br"));sources.append(details);
   const docs=$("research-documents");docs.replaceChildren();
   if(!data.documents.length)docs.append(node("p","field-help","No document suggestions were extracted. That does not mean this university requires no documents. Use its official checklist."));
   let previousGroup='';
@@ -234,6 +246,7 @@ $("research-apply").addEventListener("click",()=>{
   const reference=["Official-source research · "+(report.acquisition==='reference'?"Saved reference, not live verified · ":report.acquisition==='pasted'?"Pasted text, not fetched · ":"")+report.profile.applicant+" / "+report.profile.level+" · "+new Date(report.checkedAt).toLocaleDateString(),
     ...[...new Set(report.pages.map(p=>p.url))],
     "Review the original source for conditions, entry year and admission round. Suggestions are not a verified checklist.",
+    ...(report.pathways?.length?["QuestBridge-only sources were inspected separately; their requirements, fees and deadlines were not added to this form."]:[]),
     "Still unverified: "+[evidence.fee===null?"application fee":"",!evidence.deadlines.length?"admission deadline / year":"","personal fee-waiver eligibility"].filter(Boolean).join(", "),
     ...(report.verification?.some(c=>["not-found","mention","conflicting"].includes(c.status))?["Not established or unclear: "+report.verification.filter(c=>["not-found","mention","conflicting"].includes(c.status)).map(c=>c.topic).join(", ")]:[]),
     ...(report.scan?.failures.length?["Live pages not checked: "+report.scan.failures.map(f=>f.url).join(", ")]:[])].join("\n");
