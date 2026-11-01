@@ -18,3 +18,8 @@ export includes the visible entries, descriptions, achievements and next steps;
 keep it private. It excludes the private-notes field. Opening a prompt’s official
 source visits that university’s website; browsing the built-in library sends no
 drafts or activity data. See [workspace storage](WORKSPACE-STORAGE.md).
+
+Research reliability reports include only public source URLs, failures and evidence
+coverage. The optional Amherst guide is shipped public reference data, labelled
+with its review date and cycle; using it sends no private application data. Rechecks
+use the same URL/profile inputs as before. See [verification limits](RESEARCH-VERIFICATION.md).

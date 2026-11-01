@@ -238,6 +238,7 @@ function render() {
     if(c.waiver!=="Not needed"&&c.fee!==0)meta.append(node("span","","Waiver · "+c.waiver));
     card.append(meta);
     globalThis.appendDeadlineTrust?.(card,c);
+    if(hasSavedResearch(c))card.append(node('p','research-card-status',/Saved reference, not live verified/.test(c.notes)?'Contains a dated source reference. Current requirements need review.':/Pasted text, not fetched/.test(c.notes)?'Contains pasted source text. Check it against the official checklist.':'Research suggestions are saved. Check the complete official checklist; some items may be missing.'));
     const ready=c.documents.filter(d=>d.done).length,ph=node("div","progress-head");
     ph.append(node("span","","Document checklist"),node("span","",ready+" of "+c.documents.length+" ready"));card.append(ph);
     const track=node("div","track"),fill=node("span");fill.style.width=(c.documents.length?ready/c.documents.length*100:0)+"%";track.append(fill);card.append(track);
