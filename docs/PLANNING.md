@@ -53,13 +53,13 @@ Planning items are nested under their college in the existing `applytrack-v1`
 storage entry. Existing colleges receive empty trackers in memory; loading the
 app alone does not rewrite storage. College edits preserve planning records.
 
-Backups now use format version 5 and include every tracker and deadline-review metadata. Versions 1, 2, 3 and 4 still
+Backups now use format version 6 and include every tracker and deadline-review metadata. Versions 1, 2, 3, 4 and 5 still
 import, with empty trackers if no planning data exists. Older app versions will
-reject a version 4 backup rather than silently drop these fields. Update the app
+reject a version 6 backup rather than silently drop these fields. Update the app
 before importing a new backup on another device. Backup files are limited to
 20 MB; storage quota failures leave the previous saved list intact.
 
-Import **Add new colleges only** keeps all details and planning for existing IDs.
+Import **Add new items only** keeps all details and planning for existing IDs.
 **Replace my list** replaces the complete list, including planning items. Export a
 copy first when unsure. Trackers and recommender details remain in browser
 storage and exported backups; they are never sent to the university research API.
@@ -83,3 +83,23 @@ word limit and next revision. Counts use whitespace-separated words and may diff
 from the submission platform; check the final count there. Existing notes remain
 intact. Local drafts are included in backups and Recovery, never calendar exports
 or research requests. There is no autosave: save the form before leaving.
+
+## Shared activities and prompt library
+
+Activities are a shared workspace list independent of any college. Store up to 200
+entries, shortlist them, reorder them, and draft role / organization / description
+fields using 50 / 100 / 150 character limits from Common App guidance. Time, years,
+stage, evidence and next steps are editable. Export visible activities as text or
+use the normal JSON backup for full fidelity, including private notes. Activity
+deletions offer Undo; list replacement stores shared activities in local Recovery.
+
+Essays now offer a source-linked library of 95 editorial prompt summaries from 16
+providers. This includes seven Common App topics and eight UC first-year PIQs. It
+is not an exhaustive collection of US schools or specialized programs. Selection
+opens an editable, unsaved essay with its cycle, source, checked date, choice
+instructions and verified limits. Character limits stay separate from word limits.
+If a prompt is already saved for that college, it opens the existing draft.
+Library summaries are labelled; the full official wording remains at the source.
+Users can paste exact wording into their own editor and add custom prompts.
+
+See [prompt sources and scope](PROMPT-LIBRARY.md) and [storage details](WORKSPACE-STORAGE.md).

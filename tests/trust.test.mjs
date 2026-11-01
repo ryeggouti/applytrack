@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 const ctx=vm.createContext({URL});
-for(const file of ['trust-model.js','planning-model.js'])vm.runInContext(fs.readFileSync(new URL('../public/'+file,import.meta.url),'utf8'),ctx);
+for(const file of ['trust-model.js','planning-model.js','activities-model.js'])vm.runInContext(fs.readFileSync(new URL('../public/'+file,import.meta.url),'utf8'),ctx);
 const source=fs.readFileSync(new URL('../public/app.js',import.meta.url),'utf8').replace(/\r/g,'');
 vm.runInContext(source.slice(0,source.indexOf('try {\n  const saved')),ctx);
 const model=ctx.ApplyTrackTrust;
@@ -30,9 +30,9 @@ test('unrelated saves preserve the actual confirmation date and edited sources l
 });
 test('stale tabs cannot overwrite newer storage and successful saves advance the snapshot',()=>{
   let stored='newer',writes=0;ctx.localStorage={getItem:()=>stored,setItem:(key,value)=>{stored=value;writes++;}};ctx.announce=()=>{};ctx.showSaveProblem=()=>{};ctx.requestPersistence=()=>{};ctx.updateBackupState=()=>{};ctx.backupState=()=>({});
-  vm.runInContext(source.slice(source.indexOf('function save(next)'),source.indexOf('function daysAgo')),ctx);
+  vm.runInContext(source.slice(source.indexOf('function save('),source.indexOf('function daysAgo')),ctx);
   vm.runInContext("loadedSnapshot='older'",ctx);assert.equal(ctx.save([]),false);assert.equal(writes,0);assert.equal(stored,'newer');
-  vm.runInContext("loadedSnapshot='newer'",ctx);assert.equal(ctx.save([]),true);assert.equal(writes,1);assert.equal(vm.runInContext('loadedSnapshot',ctx),'[]');
+  vm.runInContext("loadedSnapshot='newer'",ctx);assert.equal(ctx.save([]),true);assert.equal(writes,1);assert.deepEqual(JSON.parse(vm.runInContext('loadedSnapshot',ctx)),{format:'ApplyTrackStore',version:1,colleges:[],activities:[]});
 });
 test('recovery retains linked work, caps recent removals and refuses quota failures',()=>{
   const entries=new Map();let fail=false;
@@ -45,4 +45,11 @@ test('recovery retains linked work, caps recent removals and refuses quota failu
   for(let i=0;i<21;i++)assert.equal(ctx.prepareCollegeRecovery({...college(),id:'removed-'+i}),true);
   assert.equal(ctx.readRecovery().removed.length,20);assert.equal(ctx.readRecovery().removed[0].college.id,'removed-20');
   const before=entries.get('applytrack-recovery-v1');fail=true;assert.equal(ctx.prepareCollegeRecovery(college()),false);assert.equal(entries.get('applytrack-recovery-v1'),before);
+});
+
+test('replacement recovery captures shared activities even with no colleges',()=>{
+  const entries=new Map();ctx.localStorage={getItem:key=>entries.get(key)||null,setItem:(key,value)=>entries.set(key,value)};ctx.announce=()=>{};
+  const ui=fs.readFileSync(new URL('../public/trust.js',import.meta.url),'utf8');vm.runInContext(ui.slice(ui.indexOf('  function readRecovery()'),ui.indexOf("  const recovery=node('section'")),ctx);
+  ctx.sharedActivity={id:'activity',title:'Family responsibilities',role:'',organization:'',type:'Family',description:'',impact:'',nextStep:'',notes:'Keep this note',status:'Ongoing',grades:[],timing:'',hours:'',weeks:'',shortlisted:false};
+  vm.runInContext('colleges=[];activities=ApplyTrackActivities.clean([sharedActivity])',ctx);assert.equal(ctx.prepareReplaceRecovery(),true);assert.equal(ctx.readRecovery().previous.length,0);assert.equal(ctx.readRecovery().previousActivities[0].notes,'Keep this note');
 });

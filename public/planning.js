@@ -51,16 +51,24 @@
   field('date','Due date (optional)','input',{type:'date'});
   field('askedOn','Date requested (optional)','input',{type:'date'});
   field('status','Progress','select');
+  field('characterLimit','Character limit (optional)','input',{type:'number',min:'1',max:'100000',step:'1'});
   field('wordLimit','Word limit (optional)','input',{type:'number',min:'1',max:'100000',step:'1'});
   field('url','Document or official page link (optional)','input',{type:'url',maxLength:1000,placeholder:'https://…'});
   field('category','Application area','select').append(...model.categories.map(s=>option(s,s)));
   field('priority','Priority','select').append(...model.priorities.map(s=>option(s,s)));
   field('nextStep','Next action','textarea',{rows:2,maxLength:1000,placeholder:'What is the next concrete step?'});
-  field('prompt','Official essay prompt','textarea',{rows:4,maxLength:5000,placeholder:'Copy the exact prompt from the college’s official page or application.'});
+  field('prompt','Essay prompt / library summary','textarea',{rows:4,maxLength:5000,placeholder:'Copy the exact prompt from the college’s official page or application.'});
+  field('promptSource','Official prompt source (optional)','input',{type:'url',maxLength:1000,placeholder:'https://…'});
+  field('promptCycle','Prompt cycle (optional)','input',{maxLength:40,placeholder:'e.g. 2026–2027'});
+  const promptHelp=node('p','field-help');labels.prompt.after(promptHelp);
+  let promptReference=null;
+  inputs.prompt.addEventListener('input',()=>{if(promptReference)promptReference={...promptReference,kind:'user-edited'};updatePromptHelp();});
+  for(const key of ['promptSource','promptCycle'])inputs[key].addEventListener('input',()=>{if(promptReference)promptReference={...promptReference,kind:'user-edited',checked:''};updatePromptHelp();});
+  function updatePromptHelp(){promptHelp.textContent=promptReference?(promptReference.kind==='summary'?'Library summary, not the exact prompt.':'User-entered / edited prompt. Confirm the official wording.')+(promptReference.checked?' Source checked '+promptReference.checked+'.':'')+(promptReference.minWords?' Minimum '+promptReference.minWords+' words.':''):'Copy the complete wording from your official application. Prompt library entries are labelled summaries.';}
   field('draft','Working draft (optional)','textarea',{rows:9,maxLength:30000,placeholder:'Write or paste your draft here. It stays in this browser and travels with your backup.'});
   const wordFeedback=node('p','field-help essay-word-count');wordFeedback.id='essay-word-feedback';labels.draft.after(wordFeedback);inputs.draft.setAttribute('aria-describedby',wordFeedback.id);
-  function updateWords(){const count=model.wordCount(inputs.draft.value),limit=Number(inputs.wordLimit.value);wordFeedback.textContent=count+' words'+(limit?' / '+limit+' word limit'+(count>limit?' · Over the limit by '+(count-limit):' · '+(limit-count)+' remaining'):' · Add the official word limit if one applies.');wordFeedback.textContent+=' · Check the final count in your application platform.';wordFeedback.classList.toggle('over-limit',!!limit&&count>limit);}
-  inputs.draft.addEventListener('input',updateWords);inputs.wordLimit.addEventListener('input',updateWords);
+  function updateWords(){const count=model.wordCount(inputs.draft.value),limit=Number(inputs.wordLimit.value);wordFeedback.textContent=count+' words'+(limit?' / '+limit+' word limit'+(count>limit?' · Over the limit by '+(count-limit):' · '+(limit-count)+' remaining'):inputs.characterLimit.value?'':' · Add the official word limit if one applies.');if(inputs.characterLimit.value)wordFeedback.textContent+=' · '+inputs.draft.value.length+' / '+inputs.characterLimit.value+' characters'+(inputs.draft.value.length>Number(inputs.characterLimit.value)?' · Over character limit':'');wordFeedback.textContent+=' · Check the final count in your application platform.';wordFeedback.classList.toggle('over-limit',!!limit&&count>limit||!!inputs.characterLimit.value&&inputs.draft.value.length>Number(inputs.characterLimit.value));}
+  inputs.draft.addEventListener('input',updateWords);inputs.wordLimit.addEventListener('input',updateWords);inputs.characterLimit.addEventListener('input',updateWords);
   field('revision','Next revision','textarea',{rows:2,maxLength:2000,placeholder:'For example: replace the opening with a specific scene, then ask for feedback.'});
   field('notes','Notes','textarea',{rows:5,maxLength:5000});
   const error=node('p','research-error');error.hidden=true;error.setAttribute('role','alert');form.append(error);
@@ -79,7 +87,7 @@
     else inputs.title.value=starter.value;
     inputs.title.focus();
   });
-  function open(type,collegeId='',itemId=''){
+  function open(type,collegeId='',itemId='',seed=null){
     if(!colleges.length){announce('Add a college first, then create its tasks, essays and other plans.');location.hash='applications';$('add').focus();return;}
     const item=colleges.find(c=>c.id===collegeId)?.planning?.[type]?.find(i=>i.id===itemId);
     editing={type,collegeId,itemId};form.reset();error.hidden=true;
@@ -88,15 +96,17 @@
     // Change the text node only, preserving its associated input.
     labels.title.firstChild.textContent={tasks:'Task',essays:'Essay title or prompt',recommendations:'Recommendation / role',funding:'Scholarship or aid program'}[type];
     labels.notes.firstChild.textContent=type==='essays'?'Existing prompt / additional notes':'Notes';
-    wordFeedback.hidden=type!=='essays';
+    wordFeedback.hidden=type!=='essays';promptHelp.hidden=type!=='essays';promptReference=item?.promptRef?structuredClone(item.promptRef):null;
     labels.starter.hidden=!!item||!['tasks','essays'].includes(type);
     starter.replaceChildren(option('','Choose a starting point…'),...(type==='tasks'?taskStarters.map((s,i)=>option(String(i),s[0])):['Personal statement','College writing supplement','Short response'].map(s=>option(s,s))));
-    for(const name of ['category','priority','nextStep','prompt','draft','revision'])labels[name].hidden=type==='tasks'?!['category','priority','nextStep'].includes(name):type==='essays'?!['prompt','draft','revision'].includes(name):true;
+    for(const name of ['category','priority','nextStep','prompt','draft','revision','promptSource','promptCycle'])labels[name].hidden=type==='tasks'?!['category','priority','nextStep'].includes(name):type==='essays'?!['prompt','draft','revision','promptSource','promptCycle'].includes(name):true;
     inputs.category.value='Application';inputs.priority.value='Normal';
     inputs.title.placeholder=type==='tasks'?'e.g. Ask my counselor to send the school report':type==='essays'?'e.g. Amherst writing supplement':'';
     inputs.status.replaceChildren(...model.types[type].states.map(s=>option(s,s)));
-    for(const name of ['kind','person','askedOn','wordLimit'])labels[name].hidden=!(name==='kind'?type==='funding':name==='wordLimit'?type==='essays':type==='recommendations');
-    if(item)for(const name of ['title','date','status','notes','url','person','askedOn','wordLimit','kind','category','priority','nextStep','prompt','draft','revision'])inputs[name].value=item[name]??'';
+    for(const name of ['kind','person','askedOn','wordLimit','characterLimit'])labels[name].hidden=!(name==='kind'?type==='funding':['wordLimit','characterLimit'].includes(name)?type==='essays':type==='recommendations');
+    if(item)for(const name of ['title','date','status','notes','url','person','askedOn','wordLimit','kind','category','priority','nextStep','prompt','draft','revision','characterLimit'])inputs[name].value=item[name]??'';
+    if(seed){for(const key of ['title','prompt','wordLimit','characterLimit','notes'])inputs[key].value=seed[key]??'';promptReference=seed.promptRef;}
+    inputs.promptSource.value=promptReference?.source||'';inputs.promptCycle.value=promptReference?.cycle||'';updatePromptHelp();
     updateWords();
     globalThis.markFormClean?.(form);dialog.showModal();inputs.title.focus();
   }
@@ -104,7 +114,7 @@
   form.addEventListener('submit',event=>{
     event.preventDefault();const {type,collegeId,itemId}=editing,next=structuredClone(colleges),college=next.find(c=>c.id===(itemId?collegeId:inputs.college.value));
     if(!college){error.textContent='This college no longer exists. Close and reopen this form.';error.hidden=false;return;}
-    const item={id:itemId||crypto.randomUUID(),title:inputs.title.value.trim(),date:inputs.date.value,status:inputs.status.value,notes:inputs.notes.value.trim(),url:inputs.url.value.trim(),person:inputs.person.value.trim(),askedOn:inputs.askedOn.value,wordLimit:inputs.wordLimit.value===''?'':Number(inputs.wordLimit.value),kind:inputs.kind.value||'Scholarship',category:inputs.category.value||'Application',priority:inputs.priority.value||'Normal',nextStep:inputs.nextStep.value.trim(),prompt:inputs.prompt.value.trim(),draft:inputs.draft.value,revision:inputs.revision.value.trim()};
+    const item={id:itemId||crypto.randomUUID(),title:inputs.title.value.trim(),date:inputs.date.value,status:inputs.status.value,notes:inputs.notes.value.trim(),url:inputs.url.value.trim(),person:inputs.person.value.trim(),askedOn:inputs.askedOn.value,wordLimit:inputs.wordLimit.value===''?'':Number(inputs.wordLimit.value),kind:inputs.kind.value||'Scholarship',category:inputs.category.value||'Application',priority:inputs.priority.value||'Normal',nextStep:inputs.nextStep.value.trim(),prompt:inputs.prompt.value.trim(),draft:inputs.draft.value,revision:inputs.revision.value.trim(),characterLimit:inputs.characterLimit.value===''?'':Number(inputs.characterLimit.value),promptRef:(promptReference||inputs.promptSource.value||inputs.promptCycle.value)?{id:'',provider:'',checked:'',minWords:'',kind:'user',...promptReference,source:inputs.promptSource.value.trim(),cycle:inputs.promptCycle.value.trim(),...(promptReference&&inputs.promptSource.value.trim()!==promptReference.source?{checked:'',kind:'user-edited'}:{})}:null};
     college.planning=model.clean(college.planning);const index=college.planning[type].findIndex(i=>i.id===itemId);
     if(itemId&&index<0){error.textContent='This item no longer exists. Close and reopen this form.';error.hidden=false;return;}
     if(index<0)college.planning[type].push(item);else college.planning[type][index]=item;
@@ -130,13 +140,15 @@
     if(item.date)meta.append(node('span',item.date<today()&&!model.complete(type==='admissions'?'tasks':type,item.status)?'due':'',dateLabel(item.date)+(item.date<today()?' · Past date':'')));else meta.append(node('span','','No date set'));
     if(type==='recommendations'){if(item.person)meta.append(node('span','','Recommender: '+item.person));if(item.askedOn)meta.append(node('span','','Requested '+dateLabel(item.askedOn)));}
     if(type==='tasks')meta.append(node('span','',item.category||'Application'),node('span',item.priority==='High'?'due':'',(item.priority||'Normal')+' priority'));
+    if(type==='essays'&&item.characterLimit)meta.append(node('span',item.draft?.length>item.characterLimit?'due':'',(item.draft?.length||0)+' / '+item.characterLimit+' characters'));
     if(type==='essays')meta.append(node('span',item.wordLimit&&model.wordCount(item.draft||'')>item.wordLimit?'due':'',(item.draft?model.wordCount(item.draft)+' words':'No local draft')+(item.wordLimit?' / '+item.wordLimit+' words max':'')));
     card.append(meta);
     if(type==='tasks'&&item.nextStep)card.append(node('p','planning-next','Next: '+item.nextStep));
     if(type==='essays'&&item.revision)card.append(node('p','planning-next','Next revision: '+item.revision));
     if(!compact&&type==='essays'&&(item.prompt||item.draft)){
       const detail=node('details','planning-notes');detail.id='planning-writing-'+college.id+'-'+item.id;detail.append(node('summary','','Prompt & working draft'));
-      if(item.prompt)detail.append(node('h3','','Official prompt'),node('p','',item.prompt));
+      if(item.prompt)detail.append(node('h3','',item.promptRef?.kind==='summary'?'Prompt summary':'Essay prompt'),node('p','',item.prompt));
+      if(item.promptRef){detail.append(node('p','field-help',(item.promptRef.cycle||'Cycle not stated')+' · '+(item.promptRef.kind==='summary'?'Summary — check exact wording':'User-entered / edited')+(item.promptRef.checked?' · Source checked '+item.promptRef.checked:'')));if(item.promptRef.source){const source=node('a','','Official prompt wording ↗');source.href=item.promptRef.source;source.target='_blank';source.rel='noopener noreferrer';detail.append(source);}}
       if(item.draft)detail.append(node('h3','','Working draft'),node('p','essay-draft',item.draft));card.append(detail);
     }
     if(compact)meta.append(node('span','',model.types[type]?.label||'Admissions'));
@@ -171,6 +183,10 @@
     if(!grouped.overdue.length&&!grouped.upcoming.length)empty(weekList,undated.length?'Your next steps need dates.':'A little breathing room.',undated.length?'Review the undated work below to decide what comes next.':'No open items have a date in the next seven days. Add a task whenever you’re ready.',button('Plan a task',()=>{location.hash='tasks';open('tasks');},'secondary'));
     if(undated.length){const details=node('details','week-undated'),summary=node('summary','','Without a date · '+undated.length);details.open=previousUndated??(!grouped.upcoming.length&&!grouped.overdue.length);details.append(summary,node('p','field-help','A date helps put this work in your weekly plan. Leave it blank until you can confirm it.'));for(const row of undated)details.append(rowCard(row,true));weekList.append(details);}
     for(const id of opened){const el=$(id);if(el)el.open=true;}
+  };
+  globalThis.openEssayFromPrompt=(collegeId,seed)=>{
+    const existing=seed.promptRef.id&&colleges.find(c=>c.id===collegeId)?.planning?.essays.find(e=>e.promptRef?.id===seed.promptRef.id);
+    open('essays',collegeId,existing?.id||'',existing?null:seed);
   };
   globalThis.openCollegePlanning=collegeId=>{location.hash='tasks';filters.tasks.college.value=collegeId;filters.tasks.state.value='open';filters.tasks.query.value='';renderPlanningViews(colleges);};
   // Direct links work because these sections exist before navigation is re-evaluated.

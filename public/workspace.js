@@ -14,8 +14,8 @@
   }
   globalThis.ApplyTrackWorkspace={groupDeadlines};
   if(typeof document==='undefined')return;
-  const views=['applications','deadlines','documents','about','week','tasks','essays','recommendations','funding'];
-  const titles={applications:'My applications',deadlines:'Deadlines',documents:'Documents',about:'About',week:'This week',tasks:'Tasks',essays:'Essays',recommendations:'Recommendations',funding:'Scholarships & aid'};
+  const views=['applications','deadlines','documents','about','week','tasks','essays','activities','recommendations','funding'];
+  const titles={applications:'My applications',deadlines:'Deadlines',documents:'Documents',about:'About',week:'This week',tasks:'Tasks',essays:'Essays',activities:'Activities',recommendations:'Recommendations',funding:'Scholarships & aid'};
   function showView(focus=false){
     const requested=location.hash.slice(1),view=views.includes(requested)?requested:'applications';
     for(const section of document.querySelectorAll('[data-workspace-view]'))section.hidden=section.dataset.workspaceView!==view;
@@ -24,7 +24,7 @@
       link.classList.toggle('active',active);
       if(active)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');
     }
-    if(['tasks','essays','recommendations','funding'].includes(view))$('work-nav').open=true;
+    if(['tasks','essays','activities','recommendations','funding'].includes(view))$('work-nav').open=true;
     document.title='ApplyTrack — '+titles[view];
     $('workspace-title').textContent=titles[view];
     if(focus){document.querySelector('#view-'+view+' h1')?.focus({preventScroll:true});window.scrollTo(0,0);}

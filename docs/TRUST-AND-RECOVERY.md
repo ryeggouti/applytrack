@@ -55,10 +55,15 @@ and college name without changing data. Calendar help is expandable.
 
 ## Compatibility and checks
 
-Backups now use version 5 to retain deadline-review metadata; versions 1–4 remain
-supported. Old app versions reject version 5 instead of dropping fields silently.
+Backups now use version 6 to retain deadline-review metadata; versions 1–5 remain
+supported. Old app versions reject version 6 instead of dropping fields silently.
 Automated tests cover confirmation invalidation, metadata validation, stale-tab
 saves, recovery retention and quota failure. Browser checks cover deletion and
 restoration with linked work, list replacement recovery, draft keep/discard,
 cross-tab conflicts and tracker search. Deployment remains GitHub Pages with
 the independent Netlify research API.
+
+Shared activities are included in the pre-replacement recovery snapshot and its
+download. Restore missing items merges colleges and activities by ID, preserving
+existing items. College deletion never deletes shared activities. Activity form
+edits use the same unsaved-edit and stale-tab safeguards as college and essay forms.

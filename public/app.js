@@ -1,5 +1,6 @@
 const KEY = "applytrack-v1";
 let loadedSnapshot=null;
+let activities=[];
 const BACKUP_KEY = "applytrack-backup-v1";
 const $ = id => document.getElementById(id);
 let colleges = [], deleteId = null, storageReady = true, pendingImport = null, persistRequested = false;
@@ -57,6 +58,17 @@ function validate(data) {
     return {id:c.id,name:c.name.trim(),status:c.status,round:c.round,waiver:c.waiver,deadline:c.deadline,deadlineTime:c.deadlineTime,deadlineZone:c.deadlineZone||"",
       deadlineReview:globalThis.ApplyTrackTrust?ApplyTrackTrust.clean(c.deadlineReview):c.deadlineReview,planning:cleanPlanning(c.planning),notes:c.notes,website:c.website,fee:c.fee,currency:c.currency,researched:hasSavedResearch(c),documents:c.documents.map(d=>({name:d.name,done:d.done}))};
   });
+}
+function cleanActivities(value){
+  if(globalThis.ApplyTrackActivities)return ApplyTrackActivities.clean(value);
+  if(value===undefined||Array.isArray(value)&&!value.length)return [];
+  throw new Error('Activities could not load. Reload before editing your saved work.');
+}
+function readStore(raw){
+  const data=raw?JSON.parse(raw):[];
+  if(Array.isArray(data))return {colleges:validate(data),activities:[]};
+  if(data?.format!=='ApplyTrackStore'||data.version!==1||!Array.isArray(data.activities))throw new Error('Unrecognized workspace storage.');
+  return {colleges:validate(data.colleges),activities:cleanActivities(data.activities)};
 }
 function safeWebsite(value) { try { return ["https:","http:"].includes(new URL(value).protocol); } catch { return false; } }
 function zoneOffset(zone, ms) {
@@ -118,7 +130,7 @@ function upcomingDeadlines(records) {
 }
 try {
   const saved = localStorage.getItem(KEY);loadedSnapshot=saved;
-  if (saved) colleges = validate(JSON.parse(saved));
+  if (saved) {const data=readStore(saved);colleges=data.colleges;activities=data.activities;}
 } catch {
   storageReady = false;
   announce("Saved data could not be read. Export a backup before making changes. Your existing storage has not been overwritten.");
@@ -130,14 +142,15 @@ function requestPersistence() {
   persistRequested = true;
   navigator.storage.persisted().then(already=>already||navigator.storage.persist()).catch(()=>{});
 }
-function save(next) {
+function save(next, nextActivities=activities) {
   if (!storageReady) { announce("Storage is unavailable or contains unreadable data. Export your current list before trying another browser."); return false; }
   try {
     if(localStorage.getItem(KEY)!==loadedSnapshot){const message='Another tab changed your list. Keep a copy of any unsaved details, then close this form to load the latest list.';announce(message);globalThis.showSaveProblem?.(message);return false;}
-    const serialized=JSON.stringify(next);localStorage.setItem(KEY,serialized);loadedSnapshot=serialized;colleges = next;
+    const cleanedActivities=cleanActivities(nextActivities);
+    const serialized=JSON.stringify({format:'ApplyTrackStore',version:1,colleges:next,activities:cleanedActivities});localStorage.setItem(KEY,serialized);loadedSnapshot=serialized;colleges=next;activities=cleanedActivities;
     const now = new Date().toISOString();
     updateBackupState({lastChange:now,firstChange:backupState().firstChange||now});
-    if (next.length) requestPersistence();
+    if (next.length||activities.length) requestPersistence();
     return true;
   }
   catch { announce("Your browser could not save this change. Your list was not changed. Export a backup and check available storage."); return false; }
@@ -146,18 +159,18 @@ function daysAgo(iso) { return iso ? Math.floor((localDay(Date.now())-localDay(D
 function agoLabel(days) { return days===0?"today":days===1?"yesterday":days+" days ago"; }
 function renderBackupStatus() {
   const state = backupState(), sinceExport = daysAgo(state.lastExport);
-  $("backup-status").textContent = !colleges.length ? "No account needed." : state.lastExport ? "Last backup "+agoLabel(sinceExport)+"." : "Not backed up yet.";
+  $("backup-status").textContent = (!colleges.length&&!activities.length) ? "No account needed." : state.lastExport ? "Last backup "+agoLabel(sinceExport)+"." : "Not backed up yet.";
   const changedSinceExport = state.lastChange && (!state.lastExport || state.lastChange > state.lastExport);
   const dismissedRecently = state.dismissedAt && daysAgo(state.dismissedAt) < 3;
   const due = state.lastExport ? sinceExport >= 7 : (colleges.length >= 3 || daysAgo(state.firstChange) >= 2);
-  const show = colleges.length > 0 && storageReady && changedSinceExport && due && !dismissedRecently;
+  const show = (colleges.length > 0||activities.length>0) && storageReady && changedSinceExport && due && !dismissedRecently;
   $("backup-nudge").hidden = !show;
   if (show) $("backup-nudge-text").textContent = state.lastExport
     ? "Your last backup was "+agoLabel(sinceExport)+". Your list lives only in this browser, so export a fresh copy now and then."
     : "Your list lives only in this browser. Export a backup so you don’t lose it if browser data is cleared.";
 }
 function exportBackup() {
-  const blob=new Blob([JSON.stringify({format:"ApplyTrack",version:5,colleges},null,2)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({format:"ApplyTrack",version:6,colleges,activities},null,2)],{type:"application/json"});
   const a=node("a");const url=URL.createObjectURL(blob);a.href=url;a.download="applytrack-"+today()+".json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
   updateBackupState({lastExport:new Date().toISOString()});renderBackupStatus();
 }
@@ -186,6 +199,7 @@ function render() {
   globalThis.renderWorkspaceViews?.(colleges);
   globalThis.renderPlanningViews?.(colleges);
   globalThis.renderRecovery?.();
+  globalThis.renderActivities?.();
   renderBackupStatus();
   $("total").textContent=colleges.length;
   $("count").textContent=colleges.length;
@@ -284,22 +298,24 @@ $("export").addEventListener("click",exportBackup);
 $("backup-nudge-export").addEventListener("click",exportBackup);
 $("backup-nudge-dismiss").addEventListener("click",()=>{updateBackupState({dismissedAt:new Date().toISOString()});renderBackupStatus();});
 $("import").addEventListener("click",()=>$("file").click());
-function finishImport(next,message){
-  if(save(next)){if($("import-dialog").open)$("import-dialog").close();pendingImport=null;render();announce(message);}
+function finishImport(next,message,nextActivities=activities){
+  if(save(next,nextActivities)){if($("import-dialog").open)$("import-dialog").close();pendingImport=null;render();announce(message);}
 }
 $("file").addEventListener("change",async e=>{
   const file=e.target.files[0];if(!file)return;
   try {
     if(file.size>20000000)throw new Error("Choose a backup smaller than 20 MB.");
     const data=JSON.parse(await file.text());
-    if(data.format!=="ApplyTrack"||![1,2,3,4,5].includes(data.version))throw new Error("This doesn’t look like an ApplyTrack backup.");
-    const imported=validate(data.colleges);
-    if(!colleges.length){finishImport(imported,"Imported "+imported.length+" college"+(imported.length===1?"":"s")+".");return;}
+    if(data.format!=="ApplyTrack"||![1,2,3,4,5,6].includes(data.version))throw new Error("This doesn’t look like an ApplyTrack backup.");
+    if(data.version>=6&&!Array.isArray(data.activities))throw new Error('This backup is missing its activities list. Your workspace has not changed.');
+    const imported=validate(data.colleges),importedActivities=data.version>=6?cleanActivities(data.activities):null;
+    if(!colleges.length&&!activities.length){finishImport(imported,"Imported "+imported.length+" colleges and "+(importedActivities?.length||0)+" activities.",importedActivities||[]);return;}
     const existingIds=new Set(colleges.map(c=>c.id)),overlap=imported.filter(c=>existingIds.has(c.id)).length;
-    pendingImport=imported;
+    pendingImport={colleges:imported,activities:importedActivities};
     $("import-summary").textContent="The backup has "+imported.length+" college"+(imported.length===1?"":"s")+
       (overlap?" ("+overlap+" already on your list)":"")+". You currently have "+colleges.length+".";
-    $("import-merge").disabled=imported.length===overlap;
+    $('import-summary').textContent+=' '+(importedActivities===null?'This older backup has no activities; your activities will be kept.':importedActivities.length+' activities included. Replace also replaces your activities; Add new keeps existing IDs.');
+    $("import-merge").disabled=imported.length===overlap&&!(importedActivities||[]).some(a=>!activities.some(current=>current.id===a.id));
     $("import-dialog").showModal();$("import-replace").focus();
   }catch(error){announce(error instanceof SyntaxError?"This file is not a valid JSON backup. Your list has not changed.":error.message);}
   e.target.value="";
@@ -307,13 +323,13 @@ $("file").addEventListener("change",async e=>{
 $("import-cancel").addEventListener("click",()=>{pendingImport=null;$("import-dialog").close();});
 $("import-export-first").addEventListener("click",exportBackup);
 $("import-replace").addEventListener("click",()=>{
-  if(pendingImport&&globalThis.prepareReplaceRecovery?.())finishImport(pendingImport,"Your list was replaced with the "+pendingImport.length+" colleges from the backup.");
+  if(pendingImport&&globalThis.prepareReplaceRecovery?.())finishImport(pendingImport.colleges,"Workspace restored from backup.",pendingImport.activities??activities);
 });
 $("import-merge").addEventListener("click",()=>{
   if(!pendingImport)return;
-  const existingIds=new Set(colleges.map(c=>c.id)),additions=pendingImport.filter(c=>!existingIds.has(c.id));
+  const existingIds=new Set(colleges.map(c=>c.id)),additions=pendingImport.colleges.filter(c=>!existingIds.has(c.id));
   if(colleges.length+additions.length>1000){announce("Your combined list cannot exceed 1,000 colleges.");return;}
-  finishImport([...colleges,...additions],"Added "+additions.length+" new college"+(additions.length===1?"":"s")+". Colleges already on your list were left as they are.");
+  try{const nextActivities=globalThis.ApplyTrackActivities.merge(activities,pendingImport.activities||[]);finishImport([...colleges,...additions],'Added new colleges and activities. Existing items were kept.',nextActivities);}catch(error){announce(error.message);}
 });
 render();
 // Recalculate clock-dependent views without saving or interrupting an open form.
