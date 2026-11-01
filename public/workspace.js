@@ -68,7 +68,7 @@
         else stamp.append(node('strong','','—'),node('small','','No date'));
         const text=node('div','deadline-description'),info=node('p','',c.round+' · '+c.status),state=deadlineState(c),time=timeLabel(c);
         if(time)info.append(' · '+time);
-        text.append(node('h3','',c.name),info);
+        text.append(node('h3','',c.name),info);globalThis.appendDeadlineTrust?.(text,c);
         if(key==='upcoming'){const chip=urgencyChip(state);if(chip)text.append(chip);}
         row.append(stamp,text,button('Edit college',()=>edit(c),'secondary'));section.append(row);
       }

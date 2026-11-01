@@ -18,7 +18,7 @@ mode, native forms, and responsive navigation:
 
 Each tracker filters by college and open/completed status. **Plan work** on an
 application card opens that college's task list. Item removal offers **Undo**.
-Removing a college removes its associated planning items, with confirmation.
+Removing a college moves it and its associated planning items to local Recovery in About.
 
 ## A quieter workspace
 
@@ -53,9 +53,9 @@ Planning items are nested under their college in the existing `applytrack-v1`
 storage entry. Existing colleges receive empty trackers in memory; loading the
 app alone does not rewrite storage. College edits preserve planning records.
 
-Backups now use format version 3 and include every tracker. Versions 1 and 2 still
+Backups now use format version 4 and include every tracker and deadline-review metadata. Versions 1, 2 and 3 still
 import, with empty trackers if no planning data exists. Older app versions will
-reject a version 3 backup rather than silently drop these fields. Update the app
+reject a version 4 backup rather than silently drop these fields. Update the app
 before importing a new backup on another device. Backup files are limited to
 20 MB; storage quota failures leave the previous saved list intact.
 
