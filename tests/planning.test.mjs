@@ -19,7 +19,7 @@ test('all tracker details survive a backup round trip and unrelated college edit
   const plan=model.clean();plan.tasks.push(item());plan.essays.push(item({status:'Reviewing',wordLimit:650}));plan.recommendations.push(item({status:'Requested',person:'Teacher',askedOn:'2026-10-31'}));plan.funding.push(item({status:'In progress',kind:'Financial aid'}));
   const saved=context.validate([college(plan)]),backup=JSON.parse(JSON.stringify({format:'ApplyTrack',version:3,colleges:saved}));
   const restored=plain(context.validate(backup.colleges));assert.deepEqual(restored,plain(saved));
-  restored[0].name='Edited college';assert.deepEqual(plain(context.validate(restored))[0].planning,plain(plan));
+  restored[0].name='Edited college';assert.deepEqual(plain(context.validate(restored))[0].planning,plain(model.clean(plan)));
 });
 test('malformed items and unsafe links fail validation without modifying source data',()=>{
   for(const bad of [{date:'2026-02-30'},{url:'javascript:alert(1)'},{status:'Unknown'},{wordLimit:-1},{title:''}]){
@@ -40,4 +40,11 @@ test('weekly admission grouping can respect a confirmed cutoff earlier today',()
   const data=[{...college(),deadline:'2026-12-30'}];
   const week=model.week(data,'2026-12-30',()=>true);
   assert.equal(week.overdue.length,1);assert.equal(week.upcoming.length,0);
+});
+
+test('focused task and essay fields survive saves without rewriting legacy notes',()=>{
+  const plan=model.clean();plan.tasks.push(item({category:'Documents',priority:'High',nextStep:'Ask the school office to send the transcript.'}));plan.essays.push(item({prompt:'Describe an experience.',draft:'A first draft.\nSecond paragraph.',revision:'Make the opening more specific.',notes:'Legacy prompt stays here',wordLimit:5}));
+  const saved=plain(context.validate([college(plan)]));const restored=plain(context.validate(JSON.parse(JSON.stringify(saved))));assert.deepEqual(restored,saved);assert.equal(restored[0].planning.essays[0].notes,'Legacy prompt stays here');assert.equal(model.wordCount(restored[0].planning.essays[0].draft),5);
+  assert.equal(model.wordCount('  '),0);assert.equal(model.wordCount('one\ntwo   three'),3);
+  for(const patch of [{priority:'Urgent'},{category:'Made up'},{draft:'x'.repeat(30001)},{prompt:123},{revision:123}]){const bad=model.clean();bad.essays.push(item(patch));assert.throws(()=>model.clean(bad));}
 });

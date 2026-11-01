@@ -88,3 +88,24 @@ test("deduplicates pages that redirect to the same final address",async()=>{
   const result=await research({url:"https://example.edu/apply",...profile},fetcher);
   assert.equal(result.pages.length,1);
 });
+
+test('nested checklist labels and distinct Amherst-style materials survive extraction',()=>{
+  const body='<h2>First Year Application Materials</h2><ul><li>Secondary School Transcript<ul><li>A diploma is required before enrollment.</li></ul></li><li>School Report</li><li>Counselor Recommendation (College Counselor / Guidance Counselor)</li><li>Two Teacher Recommendations (English, Math, Science, Social Studies or Foreign Language)</li><li>First marking period grades from senior year (for ED applicants)</li><li>Mid-Year School Report Form (as soon as first trimester/first semester grades are available)</li><li>Mid-Year Transcript (as soon as first trimester/first semester grades are available)</li><li>Early Decision Agreement (for ED applicants)</li><li>Amherst College Writing Supplement<ul><li>Learn about available writing options.</li></ul></li><li>Optional Standardized Test Results for the SAT or ACT</li></ul>';
+  const page=parsePage(html(body),'https://www.amherst.edu/admission/apply/firstyear',profile),labels=new Set(page.records.filter(r=>r.kind==='document').map(r=>r.label));
+  for(const name of ['Academic transcripts','School report','Counselor recommendation','Teacher recommendations','Senior-year grades','Mid-year report','Mid-year transcript','Early Decision agreement','Application essays','SAT / ACT testing'])assert.ok(labels.has(name),name);
+  assert.match(page.records.find(r=>r.label==='SAT / ACT testing').qualification,/Optional/);
+});
+test('human-verification pages are not treated as readable source evidence',async()=>{
+  const result=await research({url:'https://example.edu/apply',...profile},async()=>response('<title>Human Verification</title>'));
+  assert.equal(result.pages.length,0);assert.match(result.warnings[0],/human verification/i);
+});
+test('checklists have priority over extra deadline pages after a deadline is found',async()=>{
+  const calls=[];const fetcher=async url=>{calls.push(url);if(url.endsWith('robots.txt'))return response('',404);if(url.endsWith('/apply'))return response(html('<p>Application deadline January 1.</p>'+[1,2,3,4,5].map(n=>'<a href="/deadline'+n+'">Application deadline timeline</a>').join('')+'<a href="/requirements">Application materials checklist</a>'));return response(html('<p>You must submit an academic transcript.</p>'));};
+  const report=await research({url:'https://example.edu/apply',...profile},fetcher);assert.ok(report.documents.some(d=>d.label==='Academic transcripts'));assert.equal(calls[2],'https://example.edu/requirements');
+});
+
+test('document headings and nested optional conditions supply evidence',()=>{
+  const page=parsePage(html('<h2>Essays</h2><p>Answer the questions in your application.</p><h2>Required documents</h2><ul><li>Optional additional materials<ul><li>Portfolio</li></ul></li></ul>'),'https://example.edu/requirements',profile);
+  assert.ok(page.records.some(r=>r.label==='Application essays'));
+  const portfolio=page.records.find(r=>r.label==='Portfolio');assert.match(portfolio.qualification,/Mixed|Optional/);assert.match(portfolio.quote,/Optional additional materials/);
+});

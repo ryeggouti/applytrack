@@ -32,7 +32,7 @@ test("validation errors retain CORS headers for the Pages UI",async()=>{
   assert.equal(response.status,400);assert.equal(response.headers.get("Access-Control-Allow-Origin"),PAGES_ORIGIN);
 });
 test("oversized bodies are rejected before invoking the crawler",async()=>{
-  const response=await handler(async()=>{throw new Error("must not run");})(request("a".repeat(3001)));
+  const response=await handler(async()=>{throw new Error("must not run");})(request("a".repeat(365001)));
   assert.equal(response.status,413);
 });
 test("claims concurrent-request slots before awaiting the body",async()=>{
@@ -65,4 +65,11 @@ test("preflight refuses unsupported methods",async()=>{
   const handle=createUniversityHandler(async()=>({}));
   const response=await handle(new Request("https://api.example/api/universities",{method:"OPTIONS",headers:{Origin:PAGES_ORIGIN,"Access-Control-Request-Method":"DELETE"}}));
   assert.equal(response.status,405);
+});
+
+test('pasted text is extracted without network access and is explicitly unauthenticated',async()=>{
+  const response=await handler(async()=>{throw new Error('must not crawl');})(request({...payload,text:'School Report\nSecondary School Transcript\nTwo Teacher Recommendations\nMid-Year Transcript\nEarly Decision Agreement (for ED applicants)'}));
+  assert.equal(response.status,200);const data=await response.json();assert.equal(data.acquisition,'pasted');assert.match(data.coverage,/did not fetch or authenticate/);assert.ok(data.documents.some(d=>d.label==='Teacher recommendations'));
+  assert.equal((await handler(async()=>({}))(request({...payload,text:'too short'}))).status,400);
+  assert.equal((await handler(async()=>({}))(request({...payload,text:'x'.repeat(60001)}))).status,400);
 });

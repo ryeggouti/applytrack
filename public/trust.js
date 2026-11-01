@@ -24,7 +24,7 @@
     const round=form.elements.round.value;
     const match=result.deadlines.find(d=>d.date===form.elements.deadline.value&&(d.round===round||(round==='Early action'&&d.round==='Restrictive early action')||(round==='Early decision'&&d.round==='Early decision I')));
     if(!match)return;
-    draft={...model.clean(),origin:'research',url:match.url,fetchedAt:Number.isFinite(Date.parse(report.checkedAt))?report.checkedAt:''};source.value=draft.url;check.checked=false;reviewStatus.textContent='Research suggestion. Open the source and check the date, year and admission round before confirming.';
+    draft={...model.clean(),origin:report.acquisition==='pasted'?'manual':'research',url:match.url,fetchedAt:report.acquisition!=='pasted'&&Number.isFinite(Date.parse(report.checkedAt))?report.checkedAt:''};source.value=draft.url;check.checked=false;reviewStatus.textContent='Research suggestion. Open the source and check the date, year and admission round before confirming.';
   }
   globalThis.captureDeadlineEvidence=(report,result)=>{researchEvidence={report,result};capture(report,result);};
   for(const name of ['name','website','deadline','round','deadlineTime','deadlineZone'])form.elements[name].addEventListener('input',()=>{check.checked=false;draft={...draft,origin:'manual',fetchedAt:'',confirmedAt:'',confirmedFor:''};reviewStatus.textContent='Details changed. Check the source again before confirming.';});
@@ -90,7 +90,7 @@
     if(!missing.length){announce('Those colleges are already on your list. Existing entries were kept.');return;}
     try{const next=validate([...colleges,...missing]);if(save(next)){render();announce('Restored '+missing.length+' college'+(missing.length===1?'':'s')+' with linked checklists and planning items. Existing colleges were kept.');}}catch(e){announce(e.message);}
   }
-  function downloadPrevious(records){const url=URL.createObjectURL(new Blob([JSON.stringify({format:'ApplyTrack',version:4,colleges:records},null,2)],{type:'application/json'})),a=node('a');a.href=url;a.download='applytrack-before-replacement.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+  function downloadPrevious(records){const url=URL.createObjectURL(new Blob([JSON.stringify({format:'ApplyTrack',version:5,colleges:records},null,2)],{type:'application/json'})),a=node('a');a.href=url;a.download='applytrack-before-replacement.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
   globalThis.renderRecovery=()=>{
     recoveryList.replaceChildren();
     try{

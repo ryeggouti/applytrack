@@ -53,7 +53,7 @@ Planning items are nested under their college in the existing `applytrack-v1`
 storage entry. Existing colleges receive empty trackers in memory; loading the
 app alone does not rewrite storage. College edits preserve planning records.
 
-Backups now use format version 4 and include every tracker and deadline-review metadata. Versions 1, 2 and 3 still
+Backups now use format version 5 and include every tracker and deadline-review metadata. Versions 1, 2, 3 and 4 still
 import, with empty trackers if no planning data exists. Older app versions will
 reject a version 4 backup rather than silently drop these fields. Update the app
 before importing a new backup on another device. Backup files are limited to
@@ -73,3 +73,13 @@ completed items and funding work after admission submission.
 Browser checks cover all four creation forms, task completion/filtering,
 removal/undo, backup export and restore on a fresh local origin, college edits,
 and phone layout at a 390-pixel viewport. Both Pages and Netlify builds are checked.
+
+## Focused tasks and essays
+
+Tasks now include an application area, priority and concrete next action. Optional
+starting points fill only an editable title and next action, never requirements or
+dates. Essays separate the official prompt, working draft (30,000-character cap),
+word limit and next revision. Counts use whitespace-separated words and may differ
+from the submission platform; check the final count there. Existing notes remain
+intact. Local drafts are included in backups and Recovery, never calendar exports
+or research requests. There is no autosave: save the form before leaving.
