@@ -39,7 +39,7 @@
   function extract(report, cycle='') {
     if (!/^20\d{2}$/.test(String(cycle))) cycle='';
     const urls = new Set((report.pages||[]).map(p=>p.url));
-    const sourced = item => urls.has(item.url) && /^https:\/\//.test(item.url);
+    const sourced = item => !['questbridge','financial-aid'].includes(item.scope) && urls.has(item.url) && /^https:\/\//.test(item.url);
     const candidates=[];
     for (const item of (report.deadlines||[]).filter(sourced)) {
       // Separate sentences and semicolon-delimited clauses before pairing rounds and dates.
@@ -103,7 +103,7 @@
       if(profile==='international'&&/domestic applicants only|(?:US|U\.S\.) citizens only/i.test(text))continue;
       if(profile==='domestic'&&/international applicants only/i.test(text))continue;
       const negative=/no (?:application )?fee waivers?|fee waivers? (?:are |is )?(?:not available|not offered|unavailable)|(?:do|does) not (?:offer|accept) (?:application )?fee waivers?|(?:cannot|can't|may not|not eligible to) request (?:a )?(?:application )?fee waiver/i.test(text);
-      const positive=!negative&&/request (?:an? )?(?:application )?fee waiver|request one|fee waivers? (?:are |is )?available|fee (?:will|can|may) be waived|apply for free if|fee waivers? (?:are )?offered/i.test(text);
+      const positive=!negative&&/request (?:an? )?(?:application )?fee waiver|request one|fee waivers? (?:are |is )?available|fee (?:will|can|may) be waived|apply for free if|fee waivers? (?:are )?offered|(?:offers?|utilizes?|provides?|has) (?:an? )?(?:institutional )?(?:application )?fee waiver (?:option|program)/i.test(text);
       if(negative||positive)substantive=true;
       restricted||=negative;offered||=positive;
     }

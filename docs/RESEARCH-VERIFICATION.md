@@ -3,7 +3,10 @@
 The crawler follows official same-institution links, retaining the existing HTTPS,
 academic-host and redirect checks. It reads up to 10 HTML pages in at most 14
 attempts, with a shared 24-second budget propagated to robots and each fetch.
-Requests retain the declared ApplyTrack user agent. Robots failure/denial and human
+Requests retain the declared ApplyTrack user agent. Legacy HTTP redirect targets
+are attempted over HTTPS only (not fetched over HTTP); certificate, university-host,
+same-institution and per-destination robots checks still apply. This fixes old
+Location headers from Washington and Lee and Bowdoin. Robots failure/denial and human
 verification are not bypassed. Robots results, including failures, are reused
 within a lookup. No new scraping service, proxy, AI API or account is introduced.
 
@@ -16,6 +19,42 @@ keeps list introductions, and respects parent sections when excluding another
 applicant pathway. Conditional evidence is kept prominent; mixed conditions stay
 mixed. Passing mentions do not establish required interviews. Financial-aid forms
 are separate from admission requirements; proof of funds is financial certification.
+
+Public prose inside forms is retained, but interactive controls, hidden values,
+questionnaires and applicant response fields are removed before extraction.
+Slate paragraph/instruction blocks survive; typed-question blocks do not. No form
+is executed or submitted. Quick Pass is treated only as a waiver-policy source,
+so its questionnaire does not become an admission document checklist.
+
+At least one dedicated timeline page retains priority even if a general checklist
+already mentions a date. Financial-aid dates and QuestBridge-only dates/fees are
+excluded from general application autofill. Yearless dates still require the
+applicant's explicit application cycle.
+
+## Automatic Amherst alternatives and pathway separation
+
+If the Amherst first-year starting page cannot be read, the same bounded scan
+automatically tries these public university-owned sources:
+
+- https://admission.amherst.edu/register/quickpass
+- https://admission.amherst.edu/register/qbrdsupplement
+
+Only addresses are configured; requirements, dates and fees are extracted anew.
+Each origin's robots policy is checked. Alternative forms do not expand into
+other application pathways. They are not used for transfer or unrelated schools.
+
+Quick Pass can establish an institutional waiver option, never personal eligibility
+or an application fee amount. The QuestBridge supplement's documents, fees and
+deadlines are partitioned into a `pathways` report, displayed under **QuestBridge
+only — separate application pathway**. They do not enter the general checklist,
+topic coverage, document selection, fee autofill or deadline autofill. This
+partition also applies to dedicated QuestBridge pages entered directly and to
+QuestBridge sections encountered on general admissions pages.
+
+The main Amherst checklist remains unverified when its source is blocked. The UI
+states this even when the alternatives load successfully; the optional dated guide
+and paste fallback remain available. Opening the dated guide is an explicit action
+and does not turn saved summaries into live verification.
 
 ## What the response and UI report
 
@@ -40,7 +79,8 @@ Unavailable interviews cannot be added as a required checklist item by that cont
 
 On 2026-11-01 the deployed endpoint and direct Node requests returned HTTP 405
 Human Verification for Amherst's robots.txt / first-year source. The live report
-keeps zero fetched pages and no live documents when blocked. Separately, an
+keeps no fetched evidence from the blocked main source; accessible alternatives
+can still contribute live waiver policy and separate QuestBridge excerpts. An
 optional saved reference is offered for Amherst first-year applicants. It contains
 human-reviewed summaries from these official pages:
 
@@ -85,3 +125,9 @@ profile-specific links. Existing official-response autofill and saved-data tests
 remain in the suite. Browser checks use a disposable localhost workspace, including
 13 guide selections, blank initial fee/deadline, rechecking without duplicate
 documents, completed-document retention and a manually entered fee preserved.
+
+The automatic-source tests also cover form-field exclusion, no cross-pathway
+document/date/fee leakage, per-origin robots denial, blocked alternatives, HTTPS
+redirect upgrades and official directory matching for the 18-school coverage set.
+See [US research coverage checks](US-RESEARCH-CHECKS.md) for the dated live audit and
+the repeatable check command. Readable sources do not prove a complete checklist.
