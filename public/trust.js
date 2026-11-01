@@ -47,10 +47,10 @@
   const discardActions=node('div','form-actions');let pendingClose=null;
   discardActions.append(button('Keep editing',()=>discard.close(),'secondary'),button('Discard changes',()=>{const target=pendingClose;discard.close();target?.close();},'danger'));discard.append(discardActions);document.body.append(discard);
   function requestDiscard(dialog){pendingClose=dialog;discard.showModal();discardActions.firstChild.focus();}
-  function snapshot(f){return JSON.stringify([...f.elements].filter(e=>e.name).map(e=>[e.name,e.value,e.type==='checkbox'?e.checked:null]));}
+  function snapshot(f){return JSON.stringify([...f.elements].filter(e=>e.name).map(e=>[e.name,e.multiple?[...e.selectedOptions].map(o=>o.value):e.value,e.type==='checkbox'?e.checked:null]));}
   globalThis.markFormClean=f=>tracked.set(f,snapshot(f));
   function dirty(f){return tracked.has(f)&&tracked.get(f)!==snapshot(f);}
-  for(const f of [form,$('planning-form')]){
+  for(const f of [form,$('planning-form'),$('activity-form')]){
     if(!f)continue;markFormClean(f);const dialog=f.closest('dialog');
     dialog.addEventListener('click',event=>{
       const b=event.target.closest('button');
@@ -63,7 +63,7 @@
   // A change from another tab must never be silently overwritten by this one.
   function reconcile(){
     if(document.querySelector('dialog[open]'))return;
-    try{const raw=localStorage.getItem(KEY);if(raw===loadedSnapshot)return;const next=validate(raw?JSON.parse(raw):[]);colleges=next;loadedSnapshot=raw;storageReady=true;render();announce('Loaded the latest saved list from another tab.');}
+    try{const raw=localStorage.getItem(KEY);if(raw===loadedSnapshot)return;const next=readStore(raw);colleges=next.colleges;activities=next.activities;loadedSnapshot=raw;storageReady=true;render();announce('Loaded the latest saved list from another tab.');}
     catch{storageReady=false;announce('Another tab changed storage to an unreadable list. Your data has not been overwritten. Export a backup before continuing.');}
   }
   window.addEventListener('storage',event=>{if(event.key===KEY||event.key===null){if(document.querySelector('dialog[open]'))announce('Another tab changed your saved list. Unsaved edits are protected; close this form to load the latest list.');else reconcile();}});
@@ -73,31 +73,31 @@
   // Recovery is written before destructive changes. A failed write blocks deletion.
   const recoveryKey='applytrack-recovery-v1';
   function readRecovery(){
-    const raw=localStorage.getItem(recoveryKey);if(!raw)return {removed:[],previous:[]};
+    const raw=localStorage.getItem(recoveryKey);if(!raw)return {removed:[],previous:[],previousActivities:[]};
     const value=JSON.parse(raw);if(!value||!Array.isArray(value.removed)||!Array.isArray(value.previous)||value.removed.length>20)throw new Error('Recovery data could not be read.');
-    return {removed:value.removed.map(entry=>({at:entry.at,college:validate([entry.college])[0]})),previous:validate(value.previous)};
+    return {removed:value.removed.map(entry=>({at:entry.at,college:validate([entry.college])[0]})),previous:validate(value.previous),previousActivities:cleanActivities(value.previousActivities)};
   }
   function preserve(change){
     try{const current=readRecovery();localStorage.setItem(recoveryKey,JSON.stringify(change(current)));return true;}
     catch{const message='Recovery could not be saved. Export a backup and check browser storage before removing or replacing data.';announce(message);globalThis.showSaveProblem?.(message);return false;}
   }
   globalThis.prepareCollegeRecovery=college=>preserve(state=>({...state,removed:[{at:new Date().toISOString(),college},...state.removed.filter(e=>e.college.id!==college.id)].slice(0,20)}));
-  globalThis.prepareReplaceRecovery=()=>!colleges.length||preserve(state=>({...state,previous:colleges}));
-  const recovery=node('section','recovery-panel');recovery.append(node('h2','','Recovery'),node('p','field-help','Restore the last 20 removed colleges or recover missing colleges from the list before your most recent replacement. This stays on this device; export backups for long-term safety.'));
+  globalThis.prepareReplaceRecovery=()=>!colleges.length&&!activities.length||preserve(state=>({...state,previous:colleges,previousActivities:activities}));
+  const recovery=node('section','recovery-panel');recovery.append(node('h2','','Recovery'),node('p','field-help','Restore the last 20 removed colleges or recover colleges and shared activities from before your most recent list replacement. This stays on this device; export backups for long-term safety.'));
   const recoveryList=node('div');recovery.append(recoveryList);$('view-about').append(recovery);
-  function restore(records){
-    const ids=new Set(colleges.map(c=>c.id)),missing=records.filter(c=>!ids.has(c.id));
-    if(!missing.length){announce('Those colleges are already on your list. Existing entries were kept.');return;}
-    try{const next=validate([...colleges,...missing]);if(save(next)){render();announce('Restored '+missing.length+' college'+(missing.length===1?'':'s')+' with linked checklists and planning items. Existing colleges were kept.');}}catch(e){announce(e.message);}
+  function restore(records,activityRecords=[]){
+    const ids=new Set(colleges.map(c=>c.id)),missing=records.filter(c=>!ids.has(c.id)),missingActivities=activityRecords.filter(a=>!activities.some(current=>current.id===a.id));
+    if(!missing.length&&!activityRecords.some(a=>!activities.some(current=>current.id===a.id))){announce('Those colleges are already on your list. Existing entries were kept.');return;}
+    try{const next=validate([...colleges,...missing]);if(save(next,ApplyTrackActivities.merge(activities,activityRecords))){render();announce('Restored '+missing.length+' college'+(missing.length===1?'':'s')+' and '+missingActivities.length+' activit'+(missingActivities.length===1?'y':'ies')+'. Existing items were kept.');}}catch(e){announce(e.message);}
   }
-  function downloadPrevious(records){const url=URL.createObjectURL(new Blob([JSON.stringify({format:'ApplyTrack',version:5,colleges:records},null,2)],{type:'application/json'})),a=node('a');a.href=url;a.download='applytrack-before-replacement.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+  function downloadPrevious(records,savedActivities=[]){const url=URL.createObjectURL(new Blob([JSON.stringify({format:'ApplyTrack',version:6,colleges:records,activities:savedActivities},null,2)],{type:'application/json'})),a=node('a');a.href=url;a.download='applytrack-before-replacement.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
   globalThis.renderRecovery=()=>{
     recoveryList.replaceChildren();
     try{
       const state=readRecovery(),ids=new Set(colleges.map(c=>c.id));
-      if(state.previous.length){const row=node('div','recovery-row'),text=node('div');text.append(node('strong','','Before your last list replacement'),node('p','field-help',state.previous.length+(state.previous.length===1?' college saved':' colleges saved')));row.append(text,button('Restore missing colleges',()=>restore(state.previous),'secondary'),button('Download that list',()=>downloadPrevious(state.previous),'text-btn'));recoveryList.append(row);}
+      if(state.previous.length||state.previousActivities.length){const row=node('div','recovery-row'),text=node('div');text.append(node('strong','','Before your last list replacement'),node('p','field-help',state.previous.length+(state.previous.length===1?' college':' colleges')+' · '+state.previousActivities.length+(state.previousActivities.length===1?' activity saved':' activities saved')));row.append(text,button('Restore missing items',()=>restore(state.previous,state.previousActivities),'secondary'),button('Download that list',()=>downloadPrevious(state.previous,state.previousActivities),'text-btn'));recoveryList.append(row);}
       for(const entry of state.removed){const row=node('div','recovery-row'),text=node('div');text.append(node('strong','',entry.college.name),node('p','field-help',ids.has(entry.college.id)?'Already on your list':'Includes documents and all planning trackers'));const b=button(ids.has(entry.college.id)?'Already restored':'Restore',()=>restore([entry.college]),'secondary');b.disabled=ids.has(entry.college.id);row.append(text,b);recoveryList.append(row);}
-      if(!state.previous.length&&!state.removed.length)recoveryList.append(node('p','field-help','Nothing to recover yet. Removed colleges will appear here.'));
+      if(!state.previous.length&&!state.previousActivities.length&&!state.removed.length)recoveryList.append(node('p','field-help','Nothing to recover yet. Removed colleges will appear here.'));
     }catch{recoveryList.append(node('p','research-error','Recovery data could not be read. Its stored contents have been left untouched.'));}
   };
   // Animate the real disclosure so keyboard and assistive technology stay native.
