@@ -191,6 +191,7 @@ $("research-apply").addEventListener("click",()=>{
   if(combined.length<=5000)form.elements.notes.value=combined;
   if(plan.reason==='dated')form.elements.round.value=$('research-round').value;
   const filled=globalThis.applyResearchAutofill?.(report,$('research-cycle').value,{skipDeadline:plan.reason==='skipped'});
+  globalThis.captureDeadlineEvidence?.(report,filled);
   form.dataset.researched='true';syncResearchButton();
   researchDialog.close();form.elements.documents.focus();
   announce("Research added to the editable form. "+(filled?.fee===null?"Fee not established. ":"")+plan.message+" "+(filled?.waiverStatus?"Fee-waiver policy added; review eligibility in notes. ":"")+(filled?.notesOverflow?"Evidence could not fit in notes; reopen research to review sources. ":"Round dates and waiver conditions are in notes. ")+"Review, then save.");

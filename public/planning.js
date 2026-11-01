@@ -20,7 +20,7 @@
   const quickActions=node('div','heading-actions week-actions');quickActions.append(button('+ Add task',()=>open('tasks'),'primary'),button('Export calendar',exportCalendar,'secondary'));week.head.append(quickActions);
   const deadlineExport=button('Export calendar',exportCalendar,'secondary');deadlineExport.id='deadline-calendar-export';$('deadline-overview').before(deadlineExport);
   const weekStats=node('div','planning-stats');week.section.append(weekStats);
-  week.section.append(node('p','field-help calendar-help','Calendar export includes all unfinished dated work. Private notes and recommender names stay out. Import the file into your calendar; re-export after changes.'));
+  const calendarHelp=node('details','calendar-help');calendarHelp.append(node('summary','','How calendar export works'),node('p','field-help','Exports all unfinished dated work, including dates beyond this week. Notes and recommender-name fields stay out. Import the file into your calendar and re-export after changes; it is a snapshot, not a live sync. Dates still need to be checked against official sources.'));week.section.append(calendarHelp);
   const weekList=node('div');week.section.append(weekList);
   for(const [type,definition] of Object.entries(model.types)){
     const {section,head}=makeView(type,...copy[type]);
@@ -28,7 +28,8 @@
     const toolbar=node('div','toolbar planning-toolbar'),college=node('select'),state=node('select');
     college.setAttribute('aria-label','Filter '+definition.label+' by college');state.setAttribute('aria-label','Filter '+definition.label+' by progress');
     state.append(option('open','Still to do'),option('all','All items'),option('complete','Ready / completed'));
-    toolbar.append(college,state);section.append(toolbar);filters[type]={college,state};
+    const searchLabel=node('label','search planning-search'),query=node('input');query.type='search';query.placeholder='Search '+definition.label.toLowerCase()+'…';query.setAttribute('aria-label','Search '+definition.label);searchLabel.append(query);
+    toolbar.append(searchLabel,college,state);section.append(toolbar);filters[type]={college,state,query};query.addEventListener('input',()=>renderPlanningViews(colleges));
     college.addEventListener('change',()=>renderPlanningViews(colleges));state.addEventListener('change',()=>renderPlanningViews(colleges));
     const summary=node('p','field-help');const list=node('div','planning-list');section.append(summary,list);lists[type]={list,summary};
   }
@@ -67,9 +68,9 @@
     inputs.status.replaceChildren(...model.types[type].states.map(s=>option(s,s)));
     for(const name of ['kind','person','askedOn','wordLimit'])labels[name].hidden=!(name==='kind'?type==='funding':name==='wordLimit'?type==='essays':type==='recommendations');
     if(item)for(const name of ['title','date','status','notes','url','person','askedOn','wordLimit','kind'])inputs[name].value=item[name];
-    dialog.showModal();inputs.title.focus();
+    globalThis.markFormClean?.(form);dialog.showModal();inputs.title.focus();
   }
-  function persist(next){try{const clean=validate(next);if(!save(clean)){error.textContent='This change could not be saved. Export a backup and check browser storage.';error.hidden=false;return false;}render();return true;}catch(e){error.textContent=e.message;error.hidden=false;return false;}}
+  function persist(next){try{const clean=validate(next);if(!save(clean)){error.textContent=$('notice').querySelector('span')?.textContent||'This change could not be saved. Export a backup and check browser storage.';error.hidden=false;return false;}render();return true;}catch(e){error.textContent=e.message;error.hidden=false;return false;}}
   form.addEventListener('submit',event=>{
     event.preventDefault();const {type,collegeId,itemId}=editing,next=structuredClone(colleges),college=next.find(c=>c.id===(itemId?collegeId:inputs.college.value));
     if(!college){error.textContent='This college no longer exists. Close and reopen this form.';error.hidden=false;return;}
@@ -77,7 +78,7 @@
     college.planning=model.clean(college.planning);const index=college.planning[type].findIndex(i=>i.id===itemId);
     if(itemId&&index<0){error.textContent='This item no longer exists. Close and reopen this form.';error.hidden=false;return;}
     if(index<0)college.planning[type].push(item);else college.planning[type][index]=item;
-    if(persist(next)){dialog.close();announce(model.types[type].singular[0].toUpperCase()+model.types[type].singular.slice(1)+' saved.');}
+    if(persist(next)){globalThis.markFormClean?.(form);dialog.close();announce(model.types[type].singular[0].toUpperCase()+model.types[type].singular.slice(1)+' saved.');}
   });
   function remove(type,college,item){
     const next=structuredClone(colleges),target=next.find(c=>c.id===college.id);target.planning[type]=target.planning[type].filter(i=>i.id!==item.id);
@@ -100,7 +101,7 @@
     if(type==='recommendations'){if(item.person)meta.append(node('span','','Recommender: '+item.person));if(item.askedOn)meta.append(node('span','','Requested '+dateLabel(item.askedOn)));}
     if(type==='essays'&&item.wordLimit)meta.append(node('span','',item.wordLimit+' words max'));
     if(compact)meta.append(node('span','',model.types[type]?.label||'Admissions'));
-    card.append(meta);
+    card.append(meta);if(type==='admissions')globalThis.appendDeadlineTrust?.(card,college);
     if(!compact&&item.notes){const details=node('details','planning-notes');details.id='planning-notes-'+college.id+'-'+type+'-'+item.id;details.append(node('summary','',type==='essays'?'Prompt & notes':'Notes'),node('p','',item.notes));card.append(details);}
     const bottom=node('div','planning-actions');
     if(item.url){const link=node('a','planning-link',type==='essays'?'Open draft / source ↗':'Open link ↗');link.href=item.url;link.target='_blank';link.rel='noopener noreferrer';bottom.append(link);}
@@ -113,12 +114,13 @@
     const opened=[...root.querySelectorAll('.planning-notes[open]')].map(el=>el.id);
     const rows=model.all(records);
     for(const [type,definition] of Object.entries(model.types)){
-      const {college,state}=filters[type],previous=college.value;college.replaceChildren(option('','All colleges'),...records.map(c=>option(c.id,c.name)));college.value=records.some(c=>c.id===previous)?previous:'';
+      const {college,state,query}=filters[type],previous=college.value;college.replaceChildren(option('','All colleges'),...records.map(c=>option(c.id,c.name)));college.value=records.some(c=>c.id===previous)?previous:'';
       const relevant=rows.filter(r=>r.type===type&&(!college.value||r.college.id===college.value)),done=relevant.filter(r=>model.complete(type,r.item.status)).length;
       lists[type].summary.textContent=relevant.length+' '+(relevant.length===1?definition.singular:(type==='funding'?'funding deadlines':definition.label.toLowerCase()))+' · '+done+' ready / completed';
-      const visible=relevant.filter(r=>state.value==='all'||model.complete(type,r.item.status)===(state.value==='complete')).sort((a,b)=>(a.item.date||'9999').localeCompare(b.item.date||'9999')||a.item.title.localeCompare(b.item.title));
+      const visible=relevant.filter(r=>(state.value==='all'||model.complete(type,r.item.status)===(state.value==='complete'))&&[r.item.title,r.item.notes,r.item.person,r.college.name].join(' ').toLocaleLowerCase().includes(query.value.trim().toLocaleLowerCase())).sort((a,b)=>(a.item.date||'9999').localeCompare(b.item.date||'9999')||a.item.title.localeCompare(b.item.title));
+      if(query.value.trim())lists[type].summary.textContent=visible.length+' matching · '+relevant.length+' total';
       lists[type].list.replaceChildren();
-      if(!visible.length)empty(lists[type].list,relevant.length?'Nothing in this view.':'Your '+definition.label.toLowerCase()+' start here.',relevant.length?'Change the progress filter to see the rest.':'Add '+(type==='essays'?'an ':'a ')+definition.singular+' and give your next step a little structure.',button('+ Add '+definition.singular,()=>open(type,college.value),'secondary'));
+      if(!visible.length)empty(lists[type].list,relevant.length?'Nothing in this view.':'Your '+definition.label.toLowerCase()+' start here.',relevant.length?'Try another search, college or progress filter.':'Add '+(type==='essays'?'an ':'a ')+definition.singular+' and give your next step a little structure.',button('+ Add '+definition.singular,()=>open(type,college.value),'secondary'));
       else for(const row of visible)lists[type].list.append(rowCard(row));
     }
     const undated=rows.filter(r=>!r.item.date&&!model.complete(r.type,r.item.status));
@@ -131,7 +133,7 @@
     if(undated.length){const details=node('details','week-undated'),summary=node('summary','','Without a date · '+undated.length);details.open=previousUndated??(!grouped.upcoming.length&&!grouped.overdue.length);details.append(summary,node('p','field-help','A date helps put this work in your weekly plan. Leave it blank until you can confirm it.'));for(const row of undated)details.append(rowCard(row,true));weekList.append(details);}
     for(const id of opened){const el=$(id);if(el)el.open=true;}
   };
-  globalThis.openCollegePlanning=collegeId=>{location.hash='tasks';filters.tasks.college.value=collegeId;filters.tasks.state.value='open';renderPlanningViews(colleges);};
+  globalThis.openCollegePlanning=collegeId=>{location.hash='tasks';filters.tasks.college.value=collegeId;filters.tasks.state.value='open';filters.tasks.query.value='';renderPlanningViews(colleges);};
   // Direct links work because these sections exist before navigation is re-evaluated.
   renderPlanningViews(colleges);showWorkspaceView();
 })();

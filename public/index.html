@@ -299,7 +299,7 @@ Recommendation"></textarea>
 
 <dialog id="confirm">
   <h2>Remove this college?</h2>
-  <p>Its details, checklist, tasks, essays, recommendations and funding plans will be deleted from this browser. Export a backup first if you may need them.</p>
+  <p>This college and its linked work will move to Recovery in About. The last 20 removed colleges are kept on this device.</p>
   <div class="form-actions">
     <button class="secondary" id="cancel-delete">Keep college</button>
     <button class="danger" id="confirm-delete">Remove college</button>
@@ -309,7 +309,7 @@ Recommendation"></textarea>
 <dialog id="import-dialog" aria-labelledby="import-title">
   <h2 id="import-title">Import this backup?</h2>
   <p id="import-summary"></p>
-  <p class="field-help">Replacing deletes your current list from this browser. <button type="button" class="link-btn" id="import-export-first">Export it first</button> if you might need it.</p>
+  <p class="field-help">Replacing changes your current list. A local recovery copy of the previous list is kept in About. <button type="button" class="link-btn" id="import-export-first">Export it first</button> if you might need it.</p>
   <div class="form-actions import-actions">
     <button type="button" class="text-btn" id="import-cancel">Cancel</button>
     <button type="button" class="secondary" id="import-merge">Add new colleges only</button>
@@ -474,6 +474,7 @@ Recommendation"></textarea>
 </dialog>
 
 <script src="hosting.js"></script>
+<script src="trust-model.js"></script>
 <script src="planning-model.js"></script>
 <script src="calendar.js"></script>
 <script src="app.js"></script>
@@ -482,6 +483,7 @@ Recommendation"></textarea>
 <script src="workspace.js"></script>
 <script src="profile.js"></script>
 <script src="planning.js"></script>
+<script src="trust.js"></script>
 <script src="welcome.js"></script>
 
 </body>

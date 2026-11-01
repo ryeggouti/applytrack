@@ -1,4 +1,5 @@
 const KEY = "applytrack-v1";
+let loadedSnapshot=null;
 const BACKUP_KEY = "applytrack-backup-v1";
 const $ = id => document.getElementById(id);
 let colleges = [], deleteId = null, storageReady = true, pendingImport = null, persistRequested = false;
@@ -54,7 +55,7 @@ function validate(data) {
     if (c.website && !safeWebsite(c.website)) throw new Error("College websites must use https:// or http://.");
     ids.add(c.id);
     return {id:c.id,name:c.name.trim(),status:c.status,round:c.round,waiver:c.waiver,deadline:c.deadline,deadlineTime:c.deadlineTime,deadlineZone:c.deadlineZone||"",
-      planning:cleanPlanning(c.planning),notes:c.notes,website:c.website,fee:c.fee,currency:c.currency,researched:hasSavedResearch(c),documents:c.documents.map(d=>({name:d.name,done:d.done}))};
+      deadlineReview:globalThis.ApplyTrackTrust?ApplyTrackTrust.clean(c.deadlineReview):c.deadlineReview,planning:cleanPlanning(c.planning),notes:c.notes,website:c.website,fee:c.fee,currency:c.currency,researched:hasSavedResearch(c),documents:c.documents.map(d=>({name:d.name,done:d.done}))};
   });
 }
 function safeWebsite(value) { try { return ["https:","http:"].includes(new URL(value).protocol); } catch { return false; } }
@@ -116,7 +117,7 @@ function upcomingDeadlines(records) {
   return records.filter(c=>c.status!=="Submitted"&&c.deadline&&!deadlineState(c).past).sort(compareByDeadline);
 }
 try {
-  const saved = localStorage.getItem(KEY);
+  const saved = localStorage.getItem(KEY);loadedSnapshot=saved;
   if (saved) colleges = validate(JSON.parse(saved));
 } catch {
   storageReady = false;
@@ -132,7 +133,8 @@ function requestPersistence() {
 function save(next) {
   if (!storageReady) { announce("Storage is unavailable or contains unreadable data. Export your current list before trying another browser."); return false; }
   try {
-    localStorage.setItem(KEY,JSON.stringify(next)); colleges = next;
+    if(localStorage.getItem(KEY)!==loadedSnapshot){const message='Another tab changed your list. Keep a copy of any unsaved details, then close this form to load the latest list.';announce(message);globalThis.showSaveProblem?.(message);return false;}
+    const serialized=JSON.stringify(next);localStorage.setItem(KEY,serialized);loadedSnapshot=serialized;colleges = next;
     const now = new Date().toISOString();
     updateBackupState({lastChange:now,firstChange:backupState().firstChange||now});
     if (next.length) requestPersistence();
@@ -155,7 +157,7 @@ function renderBackupStatus() {
     : "Your list lives only in this browser. Export a backup so you don’t lose it if browser data is cleared.";
 }
 function exportBackup() {
-  const blob=new Blob([JSON.stringify({format:"ApplyTrack",version:3,colleges},null,2)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({format:"ApplyTrack",version:4,colleges},null,2)],{type:"application/json"});
   const a=node("a");const url=URL.createObjectURL(blob);a.href=url;a.download="applytrack-"+today()+".json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
   updateBackupState({lastExport:new Date().toISOString()});renderBackupStatus();
 }
@@ -183,6 +185,7 @@ function documentCaption(name) {
 function render() {
   globalThis.renderWorkspaceViews?.(colleges);
   globalThis.renderPlanningViews?.(colleges);
+  globalThis.renderRecovery?.();
   renderBackupStatus();
   $("total").textContent=colleges.length;
   $("count").textContent=colleges.length;
@@ -220,6 +223,7 @@ function render() {
     meta.append(node("span","",feeLabel(c)));
     if(c.waiver!=="Not needed"&&c.fee!==0)meta.append(node("span","","Waiver · "+c.waiver));
     card.append(meta);
+    globalThis.appendDeadlineTrust?.(card,c);
     const ready=c.documents.filter(d=>d.done).length,ph=node("div","progress-head");
     ph.append(node("span","","Document checklist"),node("span","",ready+" of "+c.documents.length+" ready"));card.append(ph);
     const track=node("div","track"),fill=node("span");fill.style.width=(c.documents.length?ready/c.documents.length*100:0)+"%";track.append(fill);card.append(track);
@@ -258,7 +262,8 @@ function edit(c) {
   form.elements.id.value=c?.id||"";
   if(!c)form.elements.currency.value="USD";
   form.elements.documents.value=c?c.documents.map(d=>d.name).join("\n"):"";
-  $("editor").showModal();form.elements.name.focus();
+  globalThis.loadDeadlineReview?.(c);globalThis.markFormClean?.(form);
+  $('editor').showModal();form.elements.name.focus();
 }
 $("add").addEventListener("click",()=>edit());
 document.querySelectorAll("#editor .close").forEach(b=>b.addEventListener("click",()=>$("editor").close()));
@@ -269,12 +274,12 @@ $("college-form").addEventListener("submit",e=>{
   const names=f.get("documents").split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
   const available=old?old.documents.slice():[];
   const documents=names.map(name=>{const i=available.findIndex(d=>d.name===name),prior=i>=0?available.splice(i,1)[0]:null;return{name,done:prior?.done||false};});
-  const c={id,planning:old?.planning,name:f.get("name").trim(),website:f.get("website").trim(),deadline:f.get("deadline"),deadlineTime:f.get("deadlineTime")||"",deadlineZone:f.get("deadlineZone")||"",
+  const c={id,deadlineReview:globalThis.readDeadlineReview?.()??old?.deadlineReview,planning:old?.planning,name:f.get("name").trim(),website:f.get("website").trim(),deadline:f.get("deadline"),deadlineTime:f.get("deadlineTime")||"",deadlineZone:f.get("deadlineZone")||"",
     fee:f.get("fee")===""?"":Number(f.get("fee")),currency:f.get("currency")||"USD",researched:e.currentTarget.dataset.researched==='true',round:f.get("round"),waiver:f.get("waiver"),status:f.get("status"),notes:f.get("notes").trim(),documents};
-  try {const [clean]=validate([c]);const next=old?colleges.map(x=>x.id===id?clean:x):[...colleges,clean];if(save(next)){$("editor").close();render();}}catch(error){announce(error.message);}
+  try {const [clean]=validate([c]);const next=old?colleges.map(x=>x.id===id?clean:x):[...colleges,clean];if(save(next)){globalThis.markFormClean?.(e.currentTarget);$('editor').close();render();}else globalThis.formError?.(e.currentTarget,$('notice').querySelector('span')?.textContent||'This change could not be saved.');}catch(error){announce(error.message);globalThis.formError?.(e.currentTarget,error.message);}
 });
 $("cancel-delete").addEventListener("click",()=>$("confirm").close());
-$("confirm-delete").addEventListener("click",()=>{if(save(colleges.filter(c=>c.id!==deleteId))){$("confirm").close();render();}});
+$('confirm-delete').addEventListener('click',()=>{const removed=colleges.find(c=>c.id===deleteId);if(!removed||!globalThis.prepareCollegeRecovery?.(removed))return;if(save(colleges.filter(c=>c.id!==deleteId))){$('confirm').close();render();announce('College moved to Recovery in About.');}});
 $("export").addEventListener("click",exportBackup);
 $("backup-nudge-export").addEventListener("click",exportBackup);
 $("backup-nudge-dismiss").addEventListener("click",()=>{updateBackupState({dismissedAt:new Date().toISOString()});renderBackupStatus();});
@@ -287,7 +292,7 @@ $("file").addEventListener("change",async e=>{
   try {
     if(file.size>20000000)throw new Error("Choose a backup smaller than 20 MB.");
     const data=JSON.parse(await file.text());
-    if(data.format!=="ApplyTrack"||![1,2,3].includes(data.version))throw new Error("This doesn’t look like an ApplyTrack backup.");
+    if(data.format!=="ApplyTrack"||![1,2,3,4].includes(data.version))throw new Error("This doesn’t look like an ApplyTrack backup.");
     const imported=validate(data.colleges);
     if(!colleges.length){finishImport(imported,"Imported "+imported.length+" college"+(imported.length===1?"":"s")+".");return;}
     const existingIds=new Set(colleges.map(c=>c.id)),overlap=imported.filter(c=>existingIds.has(c.id)).length;
@@ -302,7 +307,7 @@ $("file").addEventListener("change",async e=>{
 $("import-cancel").addEventListener("click",()=>{pendingImport=null;$("import-dialog").close();});
 $("import-export-first").addEventListener("click",exportBackup);
 $("import-replace").addEventListener("click",()=>{
-  if(pendingImport)finishImport(pendingImport,"Your list was replaced with the "+pendingImport.length+" colleges from the backup.");
+  if(pendingImport&&globalThis.prepareReplaceRecovery?.())finishImport(pendingImport,"Your list was replaced with the "+pendingImport.length+" colleges from the backup.");
 });
 $("import-merge").addEventListener("click",()=>{
   if(!pendingImport)return;

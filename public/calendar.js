@@ -20,7 +20,7 @@
       const instant=type==='admissions'&&college.deadlineTime?toInstant(college):null;
       if(instant!==null&&Number.isFinite(instant))lines.push('DTSTART:'+stamp(instant));
       else{const end=new Date(item.date+'T12:00:00Z');end.setUTCDate(end.getUTCDate()+1);lines.push('DTSTART;VALUE=DATE:'+item.date.replace(/-/g,''),'DTEND;VALUE=DATE:'+end.toISOString().slice(0,10).replace(/-/g,''));}
-      lines.push('SUMMARY:'+escape(college.name+' — '+item.title),'DESCRIPTION:'+escape((model.types[type]?.label||'Admissions')+' · '+item.status+'\nExported from ApplyTrack. Check the official source for the deadline and any changes.'),'END:VEVENT');
+      lines.push('SUMMARY:'+escape(college.name+' — '+item.title),'DESCRIPTION:'+escape((model.types[type]?.label||'Admissions')+' · '+item.status+(type==='admissions'?'\nDeadline review: '+(globalThis.ApplyTrackTrust?.status(college)||'Not confirmed'):'')+'\nExported from ApplyTrack. Check the official source for the deadline and any changes.'),'END:VEVENT');
     }
     lines.push('END:VCALENDAR');
     return {count:rows.length,text:lines.map(fold).join('\r\n')+'\r\n'};
