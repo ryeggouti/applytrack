@@ -115,6 +115,28 @@ visible reminder, and notes retain source provenance, unresolved topics and live
 failures where space permits. Reference/pasted deadline provenance is manual,
 never a fabricated fetched timestamp. No storage/backup schema migration is needed.
 
+## Application deadline layouts
+
+The deadline reader retains labelled rows/columns from tables, date-plus-application
+lists and two-column timelines before flattening page text. Parent round headings
+remain attached to nested cards. Bare unlabelled dates, merged/ambiguous columns
+and ranges are not assigned to a round. Application dates are separated from aid,
+testing, notification, reply, grade-report, optional-arts and other material dates.
+QuestBridge-prefixed records and labelled process cards are isolated, including
+Caltech's proof-of-certification row and Dartmouth's QuestBridge-only process card.
+General autofill also excludes QuestBridge defensively from older responses.
+
+A yearless restatement can match an explicitly dated statement for the same day;
+the source year is retained. Yearless-only evidence still requires the applicant's
+chosen cycle. Different days or differing known years stay unresolved. The UI shows
+the candidate dates, quotes and source links for comparison instead of asserting
+that the university itself published contradictory application deadlines.
+
+See [the 18-school deadline audit](DEADLINE-RELIABILITY.md) for results, dated source
+links and Williams's remaining access block. Production code contains no
+university-specific deadline values. The deadline source and confirmation controls
+also remain contained within the edit dialog when a long source URL is supplied.
+
 ## Validation
 
 Tests cover blocked Amherst without invented live evidence, dated-guide profile

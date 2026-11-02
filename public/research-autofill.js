@@ -41,45 +41,60 @@
     const urls = new Set((report.pages||[]).map(p=>p.url));
     const sourced = item => !['questbridge','financial-aid'].includes(item.scope) && urls.has(item.url) && /^https:\/\//.test(item.url);
     const candidates=[];
+    const add=(date,round,item)=>{if(round!=='QuestBridge')candidates.push({...date,round,url:item.url,quote:item.quote});};
     for (const item of (report.deadlines||[]).filter(sourced)) {
-      // Separate sentences and semicolon-delimited clauses before pairing rounds and dates.
-      for (const clause of item.quote.split(/;|\n|\s+and\s+(?=(?:admission )?decisions|receive notification|hear from)|(?<=[.!?])\s+(?=[A-Z])/i)) {
-        if (/financial aid|test(?:ing)?|scores|notification|decisions? (?:are |will be )?released|reply|enrollment|deposit/i.test(clause)) continue;
-        if (!/deadline|due|apply by|applications? (?:must|should|are to) be (?:submitted|received)/i.test(clause+' '+item.section)) continue;
+      if(item.deadlineType==='application'){
+        const ds=dates(item.dateText||'',cycle),rs=roundMentions(item.round||'');
+        if(ds.length===1&&rs.length===1&&rs[0].round===item.round)add(ds[0],item.round,item);
+        continue;
+      }
+      const section=item.sectionContext||item.section||'';
+      if(/first (?:quarter|marking period)|(?:mid.?year|final) (?:report|transcript)|SAT and\/or ACT Scores/i.test(item.quote))continue;
+      // A date-only block has lost its label. Only the layout parser may pair it.
+      if(!item.quote.replace(/\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\.?\s+\d{1,2}(?:,?\s+20\d{2})?\b/gi,'').trim())continue;
+      if(/financial.aid|scholarship|proof of certification|arts (?:portfolio|supplement)|optional arts|supporting application documents|supplemental materials/i.test(section))continue;
+      for (const clause of item.quote.split(/;|\n|\s+and\s+(?=(?:admission )?decisions|receive (?:an? )?(?:admission )?(?:decision|notification)|hear from)|(?<=[.!?])\s+(?=[A-Z])/i)) {
+        if (/financial aid|scholarship|test(?:ing)?|\bSAT\b|\bACT\b|scores|notification|decisions? (?:are |will be )?released|reply|enrollment|deposit|commitment|matriculat|gap year|intent to enroll|respond to|notify us|admitted students|students admitted|confirm (?:their |your )?attendance|accept.{0,25}offer|supporting (?:application )?documents|supplemental materials|SlideRoom|portfolio|arts? supplements?|proof of certification/i.test(clause)) continue;
+        if (/application (?:fee|materials) (?:or .{0,20})?(?:due|deadline)|(?:mid.?year|final) (?:report|transcript)/i.test(clause))continue;
+        const labelledRound=roundMentions(clause).length&&/(?:application|admission|rounds).{0,40}deadlines?|deadlines?.{0,40}(?:application|admission)/i.test(section);
+        if (!labelledRound&&!/deadline|due|apply by|no later than|submit (?:their|your|an?|the) application by|applications? (?:must|should|are to) be (?:submitted|received)/i.test(clause)) continue;
         if (/\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{1,2}\s*(?:[-–—]|to)\s*\d{1,2}/i.test(clause)) continue;
         const mentions=roundMentions(clause);
         let ds=dates(clause,cycle);
-        // Harvard and many other sites put the date in the heading above the round.
-        // Use a date-only heading; never mix arbitrary heading dates into a quote.
         if(!ds.length && unique(mentions.map(r=>r.round)).length===1){
           const headingDates=dates(item.section||'',cycle);
           if(headingDates.length===1 && (item.section||'').trim()===headingDates[0].label) ds=headingDates;
         }
         if (mentions.length===0) {
-          const rs=unique(roundMentions(item.section||'').map(x=>x.round));
-          if(rs.length===1&&ds.length===1)candidates.push({...ds[0],round:rs[0],url:item.url,quote:item.quote});
+          // Use the nearest scoped heading, e.g. REA > Standard Application Deadline.
+          const contextRound=section.split(' — ').reverse().map(h=>unique(roundMentions(h).map(x=>x.round))).find(rs=>rs.length);
+          if(contextRound?.length===1&&ds.length===1)add(ds[0],contextRound[0],item);
         } else if(ds.length===1&&unique(mentions.map(x=>x.round)).length===1) {
-          candidates.push({...ds[0],round:mentions[0].round,url:item.url,quote:item.quote});
+          add(ds[0],mentions[0].round,item);
         } else if(mentions.length>1 && ds[0]?.index < mentions[0].index) {
           mentions.forEach((r,i)=>{
             const local=ds.filter(d=>d.index>=(mentions[i-1]?.end??0)&&d.end<=r.index&&/^\s*for\s*$/i.test(clause.slice(d.end,r.index)));
-            if(local.length===1)candidates.push({...local[0],round:r.round,url:item.url,quote:item.quote});
+            if(local.length===1)add(local[0],r.round,item);
           });
         } else if(mentions.length>1) {
-          // Each round must have exactly one date in its own following clause.
           mentions.forEach((r,i)=>{
             const local=ds.filter(d=>d.index>=r.end&&d.index<(mentions[i+1]?.index??Infinity));
-            if(local.length===1)candidates.push({...local[0],round:r.round,url:item.url,quote:item.quote});
+            if(local.length===1)add(local[0],r.round,item);
           });
         }
       }
     }
-    const deadlines=[],conflicts=[];
+    const deadlines=[],conflicts=[],conflictEvidence=[];
     for(const round of unique(candidates.map(x=>x.round))) {
       const values=candidates.filter(x=>x.round===round);
-      if(unique(values.map(x=>x.date||x.month+'-'+x.day)).length===1)deadlines.push(values[0]);
-      else conflicts.push(round);
+      // A yearless restatement of the same day does not contradict a sourced year.
+      // Different known years or different calendar days still require review.
+      if(unique(values.map(x=>x.month+'-'+x.day)).length===1&&unique(values.filter(x=>x.date).map(x=>x.date)).length<=1)deadlines.push(values.find(x=>x.basis==='Source year')||values.find(x=>x.date)||values[0]);
+      else {conflicts.push(round);conflictEvidence.push({round,options:values.filter((v,i)=>values.findIndex(x=>x.date===v.date&&x.month===v.month&&x.day===v.day&&x.url===v.url)===i)});}
     }
+    // A page can use both the abbreviated EA label and its full REA name.
+    // Collapse only matching dates from the same source page.
+    for(let i=deadlines.length-1;i>=0;i--)if(deadlines[i].round==='Early action'&&deadlines.some(d=>d.round==='Restrictive early action'&&d.url===deadlines[i].url&&d.month===deadlines[i].month&&d.day===deadlines[i].day&&d.date===deadlines[i].date))deadlines.splice(i,1);
     const amounts=[],feeEvidence=[],waiverEvidence=[];
     for(const item of (report.fees||[]).filter(sourced)) {
       const text=item.quote,context=(item.section||'')+' '+text;
@@ -108,14 +123,14 @@
       restricted||=negative;offered||=positive;
     }
     const waiverStatus=offered&&!restricted?'Available — check eligibility':substantive?'Review waiver policy':null;
-    return {deadlines,conflicts,fee:unique(amounts).length===1?amounts[0]:null,feeEvidence,waiverEvidence,waiverStatus};
+    return {deadlines,conflicts,conflictEvidence,fee:unique(amounts).length===1?amounts[0]:null,feeEvidence,waiverEvidence,waiverStatus};
   }
   function plan(report,cycle,round,{skipDeadline=false,existingDeadline=''}={}) {
     const result=extract(report,cycle);
     const match=result.deadlines.find(d=>d.round===round);
     if(existingDeadline)return {ready:true,reason:'preserved',message:'Your existing deadline will be kept.',result,match};
     if(skipDeadline)return {ready:true,reason:'skipped',message:'Deadline will be left for you to enter.',result,match};
-    if(!result.deadlines.length)return {ready:false,reason:'unknown',message:result.conflicts.length?'Official dates conflict. Review the sources or choose to continue without a deadline.':'No application deadline was established. Try a specific official deadline page, or choose to continue without a deadline.',result};
+    if(!result.deadlines.length)return {ready:false,reason:'unknown',message:result.conflicts.length?'Different application dates were extracted. Review the source excerpts or choose to continue without a deadline.':'No application deadline was established. Try a specific official deadline page, or choose to continue without a deadline.',result};
     if(!match)return {ready:false,reason:'round',message:'Choose one of the admission rounds found on the official pages.',result};
     if(!match.date)return {ready:false,reason:'cycle',message:match.round+': '+match.label+'. The source omits the year. Enter your application-cycle start year to complete the date.',result,match};
     return {ready:true,reason:'dated',message:match.round+': '+match.date+' will fill the college form.',result,match};
