@@ -8,10 +8,10 @@ const context=vm.createContext({URL});vm.runInContext(source,context);
 const extract=(report,year='')=>JSON.parse(JSON.stringify(context.ApplyTrackResearch.extract(report,year)));
 const url='https://admissions.example.edu/apply';
 const report=(quotes=[],fees=[])=>({pages:[{url}],deadlines:quotes.map(quote=>({quote,url,section:'Application deadlines'})),fees:fees.map(quote=>({quote,url,section:'Application requirements'}))});
-test('yearless Yale dates need an explicitly chosen cycle; all rounds retained',()=>{
+test('yearless Yale dates need an explicitly chosen cycle; QuestBridge is not a general application round',()=>{
  const r=report(['Single-Choice Early Action (Deadline: November 1)','QuestBridge National College Match (Deadline: November 1)','Regular Decision (Deadline: January 2)']);
- assert.equal(extract(r).deadlines[2].date,null);
- assert.deepEqual(extract(r,'2026').deadlines.map(d=>[d.round,d.date]),[['Restrictive early action','2026-11-01'],['QuestBridge','2026-11-01'],['Regular decision','2027-01-02']]);
+ assert.equal(extract(r).deadlines[1].date,null);
+ assert.deepEqual(extract(r,'2026').deadlines.map(d=>[d.round,d.date]),[['Restrictive early action','2026-11-01'],['Regular decision','2027-01-02']]);
 });
 test('ED I, ED II and regular dates stay paired in combined excerpts',()=>{
  const r=extract(report(['Early Decision I deadline: Nov. 1, 2026; Early Decision II deadline: January 5, 2027; Regular Decision deadline: January 15, 2027']));
@@ -68,7 +68,7 @@ test('transfer is invoked within the guarded main handler, never as a second cli
 });
 
 test('captured official Yale, Harvard and MIT responses fill every extracted application round',()=>{
- for(const [name,fee,expected] of [['yale',null,['2026-11-01','2026-11-01','2027-01-02']],['harvard',95,['2026-11-01','2027-01-01']],['mit',75,['2026-11-01','2027-01-04']]]){
+ for(const [name,fee,expected] of [['yale',null,['2026-11-01','2027-01-02']],['harvard',95,['2026-11-01','2027-01-01']],['mit',75,['2026-11-01','2027-01-04']]]){
   const r=JSON.parse(fs.readFileSync(new URL(`./fixtures/${name}-research.json`,import.meta.url),'utf8'));
   const result=extract(r,'2026');assert.equal(result.fee,fee,name);assert.deepEqual(result.deadlines.map(d=>d.date).sort(),expected.sort(),name);assert.ok(result.waiverEvidence.length,name);
  }

@@ -2108,3 +2108,6 @@ aside{overflow-y:auto}.workspace{margin-top:32px}.workspace-nav{gap:3px}.workspa
 .research-verification{padding:18px;margin:18px 0 24px;border:1px solid var(--line);border-radius:12px;background:var(--planning-soft)}.research-verification h4{margin:0 0 12px}.research-verification li{margin-bottom:8px;line-height:1.6}.research-verification summary{cursor:pointer;color:var(--green);padding:9px 0;font-weight:600}.research-coverage-row{border-top:1px solid var(--line);padding:12px 0;overflow-wrap:anywhere}.research-coverage-row>strong,.research-coverage-row>span{display:block}.research-coverage-row>span{font-size:12px;color:var(--muted)}.research-reference{margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}#research-refresh{margin-bottom:12px}
 
 .research-card-status{font-size:12px;color:var(--muted);padding:10px 12px;margin:12px 0;border:1px solid var(--line);border-radius:7px;background:var(--planning-soft)}
+
+/* Keep the deadline source and confirmation usable inside narrow dialogs. */
+.deadline-review{min-width:0}.deadline-review input[type=url]{min-width:0;max-width:100%}.deadline-review .review-check input[type=checkbox]{width:auto;min-width:0;flex:0 0 auto}.deadline-review .review-check span{min-width:0;overflow-wrap:anywhere}

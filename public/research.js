@@ -110,6 +110,7 @@ function evidenceCard(item,selectable,index){
     const label=node("label","evidence-choice"),input=node("input");input.type="checkbox";input.value=index;input.dataset.researchIndex=index;input.disabled=/^Not offered/.test(item.qualification);input.dataset.researchScope=item.scope||"admission";input.dataset.researchStrength=/^Mentioned|^Mixed/.test(item.qualification)?"uncertain":"supported";
     label.append(input,node("strong","",item.label));card.append(label,node("span","evidence-tag",item.qualification));
   }else if(item.kind==='document')card.append(node('strong','',item.label),node('span','evidence-tag',item.qualification));
+  if(item.deadlineType==='application')card.append(node('span','evidence-tag','Application deadline · '+item.round));
   if(item.evidenceType==='reviewed-summary')card.append(node('span','evidence-tag','Dated reference summary — not live verified'));
   if(item.qualification==='Mentioned — verify applicability')card.append(node('p','field-help','Mention only: this excerpt does not establish a requirement.'));
   if(item.scope==='financial-aid')card.append(node("p","field-help","Financial-aid source: these instructions may apply only if you seek aid. They do not establish an admission requirement."));
@@ -145,10 +146,11 @@ function renderResearchVerification(data){
   if(!extracted.waiverStatus)missing.push('Fee waiver: availability or eligibility not established.');else missing.push('Fee waiver: your personal eligibility has not been determined.');
   if(!extracted.deadlines.length)missing.push('Admission deadline: not established for a round and year.');
   if(extracted.deadlines.length)missing.push('Only the admission rounds and years shown in the evidence are covered; other rounds remain unverified.');
-  if(extracted.conflicts?.length)missing.push('Conflicting dates: '+extracted.conflicts.join(', ')+'. Review the originals.');
+  if(extracted.conflicts?.length)missing.push('Different application dates extracted: '+extracted.conflicts.join(', ')+'. Review the source excerpts.');
   if(data.acquisition==='reference')missing.unshift('Live verification failed. These are saved reference summaries from '+data.checkedAt+'; current instructions remain unverified.');
   if(data.acquisition==='pasted')missing.unshift('Pasted text has not been authenticated or fetched. Check it against the original page.');
   const list=node('ul');for(const item of missing)list.append(node('li','',item));verificationPanel.append(list);
+  if(extracted.conflictEvidence?.length){const detail=node('details');detail.append(node('summary','','Compare unresolved application dates'));for(const conflict of extracted.conflictEvidence){detail.append(node('h4','',conflict.round));for(const option of conflict.options)detail.append(node('p','field-help',(option.date||option.label)+' · '+option.basis),node('blockquote','',option.quote),sourceLink(option.url,'Review original date ↗'));}verificationPanel.append(detail);}
   if(data.alternativeSources?.length)verificationPanel.append(node('p','field-help','Alternative official Amherst sources were checked automatically because the starting page could not be read. Quick Pass covers fee-waiver instructions only. The general Amherst document checklist remains unverified by this live lookup.'));
   if(data.pages.some(p=>p.scope==='questbridge')||data.pathways?.length)verificationPanel.append(node('p','field-help','QuestBridge-only instructions are shown separately below. They do not verify the general application checklist and are excluded from document selection, fee and deadline autofill.'));
   const checks=data.verification||[],notFound=checks.filter(c=>c.status==='not-found'),uncertain=checks.filter(c=>['mention','conflicting'].includes(c.status));
